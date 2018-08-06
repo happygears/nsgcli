@@ -1,13 +1,10 @@
-#
-# Copyright 2017 HappyGears
-#
-# Author: vadim@happygears.net
-#
-# nsgql.py - version 1.0
-#
-# NsgQL query script
-#
-#
+"""
+This module implements subset of NetSpyGlass CLI commands
+
+:copyright: (c) 2018 by Happy Gears, Inc
+:license: Apache2, see LICENSE for more details.
+
+"""
 
 from __future__ import print_function
 

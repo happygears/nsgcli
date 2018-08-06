@@ -1,8 +1,10 @@
-# Copyright (C) 2017 HappyGears - All Rights Reserved
-#
-# Unauthorized copying of this file, via any medium is strictly prohibited.
-# Proprietary and confidential
-#
+"""
+This module implements the NetSpyGlass API
+
+:copyright: (c) 2018 by Happy Gears, Inc
+:license: Apache2, see LICENSE for more details.
+
+"""
 
 from __future__ import print_function
 

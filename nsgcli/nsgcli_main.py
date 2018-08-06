@@ -1,15 +1,10 @@
-#
-# Copyright (C) 2017 HappyGears - All Rights Reserved
-#
-# Unauthorized copying of this file, via any medium is strictly prohibited.
-# Proprietary and confidential
-#
-# Simple NetSpyGlass command line. This is mostly intended for debugging and basic operational
-# control of the server
-#
-# Note: for the autocomplete to work on Mac OS, this script should be executed by Python interpreter
-# installed by brew. For some reason, readline that comes with the OS does not execute autocomplete.
-#
+"""
+This module implements subset of NetSpyGlass CLI commands
+
+:copyright: (c) 2018 by Happy Gears, Inc
+:license: Apache2, see LICENSE for more details.
+
+"""
 
 from __future__ import print_function
 
