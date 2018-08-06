@@ -138,11 +138,7 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
         except Exception as ex:
             return 503, ex
         else:
-            return response.status_code, json.loads(response.content)
-        # else:
-        #     with response:
-        #         for line in response.iter_lines():
-        #             print('Connected to the server, server status: {0}'.format(line))
+            print(response.content)
 
     ##########################################################################################
     def do_show(self, arg):
