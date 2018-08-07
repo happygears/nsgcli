@@ -48,10 +48,20 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         except Exception as ex:
             return 503, ex
         else:
-            with response:
-                status = response.status_code
-                for acr in nsgcli.api.transform_remote_command_response_stream(response):
-                    return status, acr
+            return 200, json.loads(response.content)
+
+    def get_cache_data(self):
+        """
+        make API call /v2/ui/net/{0}/actions/cache/list and return the response
+        as a tuple (http_code,json)
+        """
+        request = 'v2/ui/net/{0}/actions/cache/list'.format(self.netid)
+        try:
+            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+        except Exception as ex:
+            return 503, ex
+        else:
+            return 200, json.loads(response.content)
 
     ##########################################################################################
     def do_version(self, args):
@@ -82,19 +92,49 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         """
         List contents of the long- and short-term NsgQL cache
         """
-        request = 'v2/ui/net/{0}/actions/cache/list'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
+        status, resp_json = self.get_cache_data()
+        if status != 200:
+            print('ERROR: {0}'.format(self.get_error(resp_json)))
         else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    print('ERROR: {0}'.format(self.get_error(response)))
-                else:
-                    response = json.loads(response.content)
-                    print(json.dumps(response, indent=4))
+            print(json.dumps(resp_json, indent=4))
+
+    ##########################################################################################
+    def do_index(self, arg):
+        """
+        List NsgQL indexes and their cardinality
+        """
+        status, resp_json = self.get_cache_data()
+        if status != 200:
+            print('ERROR: {0}'.format(self.get_error(resp_json)))
+        else:
+            indexes = resp_json[0].get('INDEXES', {})
+            format = '{0:<40} | {1:<20} | {2:<10} | {3:<5} | {4}'
+            print(format.format('index', 'table', 'column', 'ext', 'cardinality'))
+            print('----------------------------------------------------------------------------------------------------')
+            for index_key in sorted(indexes.keys()):
+                table, column, suffix = self.parse_index_key(index_key)
+                print(format.format(index_key, table, column, suffix, indexes[index_key]))
+
+    def parse_index_key(self, index_key):
+        """
+        parse index key and return table, column and suffix
+
+        currently recognized format is
+
+        table:column[.suffix]
+        """
+        first_colon = index_key.find(':')
+        if first_colon < 0:
+            return '', '', ''
+        table = index_key[0 : first_colon]
+        last_dot = index_key.rfind('.')
+        if last_dot < 0:
+            column = index_key[first_colon + 1:]
+            suffix = ''
+        else:
+            column = index_key[first_colon + 1: last_dot]
+            suffix = index_key[last_dot + 1:]
+        return table, column, suffix
 
     ##########################################################################################
     def do_server(self, arg):
@@ -107,13 +147,21 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         except Exception as ex:
             return 503, ex
         else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    print('ERROR: {0}'.format(self.get_error(response)))
-                else:
-                    response = json.loads(response.content)
-                    print(json.dumps(response, indent=4))
+            status = response.status_code
+            if status != 200:
+                print('ERROR: {0}'.format(self.get_error(response)))
+            else:
+                resp_dict = json.loads(response.content)
+                if 'success' in resp_dict:
+                    d = resp_dict.get('success', {})
+                    if isinstance(d, dict):
+                        resp_dict = d
+                    else:
+                        resp_dict = json.loads(d)
+                for key in sorted(resp_dict.keys()):
+                    if key == 'HA':
+                        continue
+                    print('{0:<8} :   {1}'.format(key, resp_dict.get(key, '')))
 
     ##########################################################################################
     def do_status(self, _):
