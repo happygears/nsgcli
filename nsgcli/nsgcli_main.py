@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import getopt
 import json
-import os
+from pyhocon import ConfigFactory
 import sys
 
 import nsgcli.api
@@ -63,8 +63,12 @@ class InvalidArgsException(Exception):
 class NsgCLI(nsgcli.sub_command.SubCommand, object):
     def __init__(self):
         super(NsgCLI, self).__init__(base_url=STANDARD_UNIX_SOCKET_PATH, token='', net_id=1)
+        self.base_url = ''
         self.command = ''
         self.current_region = None
+        self.nsg_config = ''
+        self.token = ''
+        self.netid = 1
         self.prompt = ' > '
         # self.prompt = lambda _: self.make_prompt()
 
@@ -79,8 +83,8 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
         try:
             opts, args = getopt.getopt(argv,
-                                       'hs:b:t:n:c:r:',
-                                       ['help', 'socket=', 'base-url=', 'token=', 'network=', 'command=', 'region='])
+                                       'hs:b:t:n:c:r:C:',
+                                       ['help', 'socket=', 'base-url=', 'token=', 'network=', 'command=', 'region=', 'config='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -104,6 +108,15 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
                 self.command = arg
             elif opt in ['-r', '--region']:
                 self.current_region = arg
+            elif opt in ['-C', '--config']:
+                # if path to nsg config file is provided using this parameter, then --token is interpreted as
+                # the path to the configuration parameter in this file
+                self.nsg_config = arg
+
+        if self.nsg_config and self.token:
+            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
+            conf = ConfigFactory.parse_file(self.nsg_config)
+            self.token = conf.get_string(self.token)
 
         self.make_prompt()
 

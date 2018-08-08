@@ -21,7 +21,7 @@ setuptools.setup(name='nsgcli',
                  license='Apache',
                  packages=setuptools.find_packages(),
                  install_requires=[
-                     'requests', 'requests-unixsocket'
+                     'requests', 'requests-unixsocket', 'pyhocon'
                  ],
                  scripts=['bin/nsgcli', 'bin/nsgql'],
                  include_package_data=True,

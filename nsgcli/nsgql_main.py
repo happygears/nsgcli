@@ -10,7 +10,7 @@ from __future__ import print_function
 
 import getopt
 import json
-import os
+from pyhocon import ConfigFactory
 import sys
 from cmd import Cmd
 
@@ -70,6 +70,7 @@ class NsgQLCommandLine(Cmd):
         self.raw = False
         self.access_token = ''
         self.command = ''
+        self.nsg_config = ''
         self.header_divider = '-+-'
         self.cell_divider = ' | '
 
@@ -129,7 +130,6 @@ class NsgQLCommandLine(Cmd):
                     print(deserialized)
                 except ValueError as e:
                     print('Error: {0}'.format(e))
-                    print(line)
 
     def is_error(self, response):
         if isinstance(response, dict) and 'error' in response:
@@ -192,8 +192,8 @@ class NsgQLCommandLine(Cmd):
         try:
             opts, args = getopt.getopt(
                 argv,
-                's:b:n:f:c:ha:',
-                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'command=', 'raw', 'token='])
+                's:b:n:f:c:ha:C:',
+                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'command=', 'raw', 'token=', 'config='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -219,6 +219,15 @@ class NsgQLCommandLine(Cmd):
                 self.access_token = arg
             elif opt in ['-c', '--command']:
                 self.command = arg
+            elif opt in ['-C', '--config']:
+                # if path to nsg config file is provided using this parameter, then --token is interpreted as
+                # the path to the configuration parameter in this file
+                self.nsg_config = arg
+
+        if self.nsg_config and self.access_token:
+            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
+            conf = ConfigFactory.parse_file(self.nsg_config)
+            self.access_token = conf.get_string(self.access_token)
 
     def summary(self):
         print()
