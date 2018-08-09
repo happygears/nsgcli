@@ -102,17 +102,18 @@ class IndexCommands(nsgcli.sub_command.SubCommand, object):
                     for column_name in ordered_columns:
                         self.update_column_width(converted, column_name, column_width)
                         self.update_column_width(title, column_name, column_width)
-                # assemble format string
-                table_columns = []
-                for column_name in ordered_columns:
-                    table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
-                format_str = ' | '.join(table_columns)
-                title_line = format_str.format(title)
-                print(title_line)
-                print('-' * len(title_line))
-                for idx in resp:
-                    converted = self.convert_obj(idx, ordered_columns)
-                    print(format_str.format(converted))
+                if column_width:
+                    # assemble format string
+                    table_columns = []
+                    for column_name in ordered_columns:
+                        table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
+                    format_str = ' | '.join(table_columns)
+                    title_line = format_str.format(title)
+                    print(title_line)
+                    print('-' * len(title_line))
+                    for idx in resp:
+                        converted = self.convert_obj(idx, ordered_columns)
+                        print(format_str.format(converted))
 
     def convert_obj(self, obj, columns):
         new_obj = obj.copy()
