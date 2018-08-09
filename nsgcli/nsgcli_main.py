@@ -14,6 +14,7 @@ from pyhocon import ConfigFactory
 import sys
 
 import nsgcli.api
+import nsgcli.index
 import nsgcli.show
 import nsgcli.exec_commands
 import nsgcli.snmp_commands
@@ -162,6 +163,22 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
     def complete_show(self, text, _line, _begidx, _endidx):
         sub_cmd = nsgcli.show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
+
+    ##########################################################################################
+    def do_index(self, arg):
+        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        if arg:
+            sub_cmd.onecmd(arg)
+        else:
+            sub_cmd.cmdloop()
+
+    def help_index(self):
+        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        return sub_cmd.help()
+
+    def complete_index(self, text, _line, _begidx, _endidx):
+        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
