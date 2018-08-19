@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
-twine upload dist/*
+python -m twine upload dist/*
 
