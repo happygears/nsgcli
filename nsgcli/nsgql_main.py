@@ -178,7 +178,9 @@ class NsgQLCommandLine(Cmd):
                     row_elements.append(row_txt)
                 print(self.cell_divider.join(row_elements))
             self.print_table_header_separator(widths)
-        print('Count: {0}'.format(len(rows)))
+        processing_time_sec = resp.get('processingTimeMs', 0) / 1000.0
+        print('Count: {0}, served by: {1}, processing time: {2} sec; query id: {3}'.format(
+            len(rows), resp.get('server', 'unknown'), processing_time_sec, resp.get('queryId', 0)))
         print('')
 
     def print_table_header_separator(self, widths):
