@@ -15,6 +15,7 @@ import sys
 from cmd import Cmd
 
 import nsgcli.api
+import response_formatter
 
 
 HTTP_OVER_UNIX_SOCKET_PROTOCOL = 'http+unix://'
@@ -71,8 +72,7 @@ class NsgQLCommandLine(Cmd):
         self.access_token = ''
         self.command = ''
         self.nsg_config = ''
-        self.header_divider = '-+-'
-        self.cell_divider = ' | '
+        self.table_formatter = response_formatter.ResponseFormatter()
 
     def do_help(self, arg):
         usage()
@@ -125,7 +125,7 @@ class NsgQLCommandLine(Cmd):
                             if error:
                                 print('Server error: {0}'.format(error))
                                 continue
-                            self.print_result_as_table(resp)
+                            self.table_formatter.print_result_as_table(resp)
                         return
                     print(deserialized)
                 except ValueError as e:
@@ -141,53 +141,6 @@ class NsgQLCommandLine(Cmd):
             resp_obj = json.loads(response)
             return self.is_error(resp_obj)
         return None
-
-    def print_result_as_table(self, resp):
-        columns = resp['columns']  # e.g.:   [{u'text': u'device'}]
-        rows = resp['rows']
-        widths = {}
-        col_num = 0
-        for col in columns:
-            widths[col_num] = len(col['text'])
-            col_num += 1
-        for row in rows:
-            el_count = 0
-            for element in row:
-                element = str(element).rstrip()
-                w = widths.get(el_count, 0)
-                if len(element) > w:
-                    widths[el_count] = len(element)
-                el_count += 1
-        total_width = 0
-        col_names = []
-        self.print_table_header_separator(widths)
-        for idx in range(0, len(widths)):
-            form = '{0:' + str(widths[idx]) + '}'
-            col_txt = form.format(columns[idx]['text'])
-            col_names.append(col_txt)
-            total_width += len(col_txt)
-        print(self.cell_divider.join(col_names))
-        self.print_table_header_separator(widths)
-        if rows:
-            for row in rows:
-                row_elements = []
-                for idx in range(0, len(widths)):
-                    form = '{0:' + str(widths[idx]) + '}'
-                    element = row[idx]
-                    row_txt = form.format(element)
-                    row_elements.append(row_txt)
-                print(self.cell_divider.join(row_elements))
-            self.print_table_header_separator(widths)
-        processing_time_sec = resp.get('processingTimeMs', 0) / 1000.0
-        print('Count: {0}, served by: {1}, processing time: {2} sec; query id: {3}'.format(
-            len(rows), resp.get('server', 'unknown'), processing_time_sec, resp.get('queryId', 0)))
-        print('')
-
-    def print_table_header_separator(self, widths):
-        header_parts = []
-        for idx in range(0, len(widths)):
-            header_parts.append('-' * widths[idx])
-        print(self.header_divider.join(header_parts))
 
     def parse_args(self, argv):
 

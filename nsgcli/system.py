@@ -15,6 +15,7 @@ import time
 
 import nsgcli.api
 import nsgcli.sub_command
+import response_formatter
 
 ROLE_MAP = {
     'manager': 'mgr',
@@ -24,12 +25,6 @@ ROLE_MAP = {
     'agent': 'agt',
     'emulator': 'emu'
 }
-
-MEMORY_VALUE_FIELDS = ['fsFreeSpace',
-                       'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',
-                       'redisUsedMemory', 'redisMaxMemory']
-
-PERCENTAGE_VALUE_FIELDS = ['cpuUsage', 'systemMemFreePercent']
 
 
 def score_roles(roles):
@@ -65,20 +60,6 @@ def transform_roles(roles):
     Server sends roles as a comma-separated string, e.g. "primary,monitor"
     """
     return ','.join([ROLE_MAP.get(role, '?') for role in sorted(roles.split(',')) if role != 'primary'])
-
-
-def sizeof_fmt(num, suffix='B'):
-    if not num:
-        return ''
-    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
-        if abs(num) < 1024.0:
-            return "%3.3f %s%s" % (num, unit, suffix)
-        num /= 1024.0
-    return '%.3f %s%s' % (num, 'Y', suffix)
-
-
-def percentage_fmt(num):
-    return '%.2f %%' % num
 
 
 def parse_table_response(response):
@@ -125,6 +106,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def __init__(self, base_url, token, net_id, region=None):
         super(SystemCommands, self).__init__(base_url, token, net_id, region)
+        self.table_formatter = response_formatter.ResponseFormatter()
         if region is None:
             self.prompt = 'show system # '
         else:
@@ -136,7 +118,32 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
         the server does not 'json-stream' response for this API call
         """
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid), token=self.token)
+            response = nsgcli.api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
+                                       token=self.token)
+        except Exception as ex:
+            return 503, ex
+        else:
+            return response.status_code, json.loads(response.content)
+
+    def nsgql_call(self, query):
+        """
+        makes API call v2/nsg/cluster/net/{0}/status and returns the response. Note that
+        the server does not 'json-stream' response for this API call
+        """
+        path = "/v2/query/net/{0}/data/".format(self.netid)
+        nsgql = {
+            'targets': []
+        }
+
+        if query:
+            nsgql['targets'].append(
+                {
+                    'nsgql': query,
+                    'format': 'table'
+                }
+            )
+        try:
+            response = nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
         except Exception as ex:
             return 503, ex
         else:
@@ -145,70 +152,92 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
     def help(self):
         print('Show various system parameters and state variables. Arguments: {0}'.format(self.get_args()))
 
-    def do_os(self, arg):
-        status, response = self.status_api_call()
+    def do_filesystem(self, arg):
+        status, response = self.nsgql_call(
+            'SELECT device as server,component,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'cpuUsage', 'fsFreeSpace', 'systemMemFreePercent', 'localTimeMs', 'systemUptime', 'updatedAt'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
+
+    def do_memory(self, arg):
+        status, response = self.nsgql_call(
+            'SELECT device as server,component,systemMemFreePercent,systemMemTotal FROM systemMemTotal ORDER BY device')
+        if status != 200 or self.is_error(response):
+            print('ERROR: {0}'.format(self.get_error(response)))
+        else:
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
+
+    def do_cpu(self, arg):
+        status, response = self.nsgql_call(
+            'SELECT device as server,component,cpuUsage FROM cpuUsage ORDER BY device')
+        if status != 200 or self.is_error(response):
+            print('ERROR: {0}'.format(self.get_error(response)))
+        else:
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_tsdb(self, arg):
-        status, response = self.status_api_call()
+        status, response = self.nsgql_call(
+            'SELECT device as server,component,tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
+            'FROM tsDbVarCount ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'tsDbVarCount', 'tsDbErrors', 'tsDbSaveTime', 'tsDbSaveLag', 'tsDbTimeSinceLastSave'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_python(self, arg):
-        status, response = self.status_api_call()
+        status, response = self.nsgql_call(
+            'SELECT device as server,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'pythonErrorsRate'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_c3p0(self, arg):
-        status, response = self.status_api_call()
+        status, response = self.nsgql_call(
+            'SELECT device as server,c3p0NumConnections, c3p0NumBusyConnections, c3p0NumIdleConnections,'
+            'c3p0NumFailedCheckouts, c3p0NumFailedIdleTests FROM c3p0NumConnections ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'c3p0NumConnections', 'c3p0NumBusyConnections', 'c3p0NumIdleConnections',
-                 'c3p0NumFailedCheckouts', 'c3p0NumFailedIdleTests'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_jvm(self, arg):
-        status, response = self.status_api_call()
+        status, response = self.nsgql_call(
+            'SELECT device as server,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
+            'FROM jvmMemTotal ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'openFdCount',
-                 'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',
-                 'GCCountRate', 'GCTimeRate', 'updatedAt'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_redis(self, arg):
-        """
-        this does not work at the moment because redis metrics are attached to
-        devices that represent redis servers rather than nsg servers
-        """
-        status, response = self.status_api_call()
+        status, response = self.nsgql_call(
+            'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,'
+            'redisUsedMemory,redisMaxMemory,'
+            'redisUsedCpuSysRate,redisUsedCpuUserRate,'
+            'redisConnectedClients,redisCommandsRate '
+            'FROM redisDbSize ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            self.print_cluster_vars(
-                ['name', 'redisCommandsRate', 'redisDbSize',
-                 'redisUsedMemory', 'redisMaxMemory',
-                 'redisUsedCpuSysRate', 'redisUsedCpuUserRate',
-                 'redisConnectedClients', 'redisCommandsRate',
-                 'redisErrorsRate', 'redisOOMErrorsRate'],
-                response)
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
+
+        status, response = self.nsgql_call(
+            'SELECT device as server,redisErrorsRate,redisOOMErrorsRate FROM redisErrorsRate ORDER BY device')
+        if status != 200 or self.is_error(response):
+            print('ERROR: {0}'.format(self.get_error(response)))
+        else:
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
 
     def do_lag(self, arg):
         status, response = self.status_api_call()
@@ -278,7 +307,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
             self.update_member(member, this_server)
             for field in names:
                 value = str(member.get(field, ''))
-                member[field] = self.transform_value(field, value, outdated=True)
+                member[field] = self.table_formatter.transform_value(field, value, outdated=True)
 
         for member in sorted_members:
             for field in field_width.keys():
@@ -317,26 +346,3 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
     #     if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
     #         return response
     #     return response.get('error', '')
-
-    def transform_value(self, field_name, value, outdated=False):
-        if field_name in ['updatedAt', 'localTimeMs']:
-            updated_at_sec = float(value) / 1000
-            value = datetime.datetime.fromtimestamp(updated_at_sec)
-            suffix = ''
-            if outdated and time.time() - updated_at_sec > 15:
-                suffix = ' outdated'
-            return value.strftime('%Y-%m-%d %H:%M:%S') + suffix
-
-        if field_name in ['systemUptime', 'processUptime']:
-            td = datetime.timedelta(0, float(value))
-            return str(td)
-
-        # if field_name == 'cpuUsage':
-        #     return value + ' %'
-
-        if field_name in MEMORY_VALUE_FIELDS and value:
-            return sizeof_fmt(float(value))
-
-        if field_name in PERCENTAGE_VALUE_FIELDS and value:
-            return percentage_fmt(float(value))
-        return value
