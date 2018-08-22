@@ -40,8 +40,8 @@ class ResponseFormatter(object):
         self.cell_divider = ' | '
 
     def print_result_as_table(self, resp):
-        columns = resp['columns']  # e.g.:   [{u'text': u'device'}]
-        rows = resp['rows']
+        columns = resp.get('columns', [])  # e.g.:   [{u'text': u'device'}]
+        rows = resp.get('rows', [])
         widths = {}
         col_num = 0
         for col in columns:

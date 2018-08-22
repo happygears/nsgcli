@@ -154,7 +154,8 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_filesystem(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,component,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace ORDER BY device')
+            'SELECT device as server,component,NsgRegion,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace '
+            'WHERE fsUtil NOT NULL AND fsFreeSpace NOT NULL AND fsTotalSpace NOT NULL ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
@@ -163,7 +164,8 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_memory(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,component,systemMemFreePercent,systemMemTotal FROM systemMemTotal ORDER BY device')
+            'SELECT device as server,component,NsgRegion,systemMemFreePercent,systemMemTotal FROM systemMemTotal '
+            'WHERE systemMemFreePercent NOT NULL AND systemMemTotal NOT NULL ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
@@ -172,7 +174,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_cpu(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,component,cpuUsage FROM cpuUsage ORDER BY device')
+            'SELECT device as server,component,NsgRegion,cpuUsage FROM cpuUsage WHERE cpuUsage NOT NULL ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
@@ -181,8 +183,11 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_tsdb(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,component,tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
-            'FROM tsDbVarCount ORDER BY device')
+            'SELECT device as server,component,NsgRegion,'
+            'tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
+            'FROM tsDbVarCount '
+            'WHERE tsDbVarCount NOT NULL AND tsDbErrors NOT NULL AND '
+            'tsDbSaveTime NOT NULL AND tsDbSaveLag NOT NULL AND tsDbTimeSinceLastSave  NOT NULL ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
@@ -191,7 +196,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_python(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
+            'SELECT device as server,NsgRegion,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
@@ -210,7 +215,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_jvm(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as server,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
+            'SELECT device as server,NsgRegion,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
             'FROM jvmMemTotal ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -220,11 +225,10 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
 
     def do_redis(self, arg):
         status, response = self.nsgql_call(
-            'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,'
-            'redisUsedMemory,redisMaxMemory,'
-            'redisUsedCpuSysRate,redisUsedCpuUserRate,'
-            'redisConnectedClients,redisCommandsRate '
-            'FROM redisDbSize ORDER BY device')
+            'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,redisUsedMemory,redisMaxMemory,'
+            'redisUsedCpuSysRate,redisUsedCpuUserRate,redisConnectedClients,redisCommandsRate '
+            'FROM redisDbSize '
+            'ORDER BY device')
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
