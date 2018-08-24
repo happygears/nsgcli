@@ -24,6 +24,9 @@ Output:
 EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
 EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
 
+TAIL_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
+TAIL_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?args={2}'
+
 # FPING_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
 # FPING_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
 
@@ -58,6 +61,41 @@ class ExecCommands(nsgcli.sub_command.SubCommand, object):
             self.prompt = 'exec # '
         else:
             self.prompt = 'exec [' + self.current_region + '] # '
+
+    def do_tail(self, arg):
+        """
+        Runs tail on an agent.
+
+        Example: tail -100 /opt/nsg-agent/home/logs/agent.log
+        """
+        args = arg.split()
+        if not args:
+            print('At least one argument (file path) is required')
+            self.do_help('tail')
+            return
+
+        cmd_args = ' '.join(args)
+
+        if self.current_region:
+            request = TAIL_TEMPLATE_WITH_REGION.format(self.netid, 'tail', self.current_region, cmd_args)
+        else:
+            request = TAIL_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
+
+        try:
+            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token, stream=True)
+        except Exception as ex:
+            print('ERROR: {0}'.format(ex))
+        else:
+            with response:
+                status = response.status_code
+                if status != 200:
+                    for line in response.iter_lines():
+                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
+                        return
+
+                for acr in nsgcli.api.transform_remote_command_response_stream(response):
+                    fping_status = self.parse_fping_status(acr)
+                    self.print_agent_response(acr, fping_status)
 
     def do_fping(self, arg):
         """
