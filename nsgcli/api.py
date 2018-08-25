@@ -104,16 +104,14 @@ def transform_remote_command_response_stream(response_generator):
     :return: generator that yields lines
     """
     # print(response_generator.headers)
-    for line in response_generator.iter_content(chunk_size=None, decode_unicode=True):
-        # print(line)
-        if not line:
+
+    for line in response_generator.iter_lines(decode_unicode=True):
+        # print('####' + line)
+
+        if not line or line.strip() in ['[', ']']:
             continue
-        # line = line.strip()
-        if line and line != '[' and line != ']':
-            for subline in line.split('\n'):
-                if not subline:
-                    continue
-                try:
-                    yield json.loads(subline)
-                except Exception as e:
-                    print('{0} : {1}'.format(e, subline))
+
+        try:
+            yield json.loads(line)
+        except Exception as e:
+            print('{0} : {1}'.format(e, line))
