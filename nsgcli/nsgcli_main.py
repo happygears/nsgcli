@@ -41,15 +41,16 @@ NetSpyGlass server running on the same machine.
 
 Usage:
 
-    nsgcli.py [--socket=abs_path_to_unix_socket] [--base-url=url] [--token=token] [--network=netid] [--command=command] [--region=region]
+    nsgcli.py [--socket=abs_path_to_unix_socket] [--base-url=url] [--token=token] [--network=netid] [--region=region] [command]
     
     --socket:    a path to the unix socket created by the server that can be used to access it 
                  when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
     --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
     --token:     server API access token (if the server is configured with user authentication)
-    --command:   execute command provided as an argument.
     --region:    if present, all commands will be executed on given region. Equivalent to the command 'region' in
                  the interactive mode.
+
+    all arguments provided on the command line after the last switch are interpreted together as nsgcli command
 """
 
 
@@ -84,8 +85,8 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
         try:
             opts, args = getopt.getopt(argv,
-                                       'hs:b:t:n:c:r:C:',
-                                       ['help', 'socket=', 'base-url=', 'token=', 'network=', 'command=', 'region=', 'config='])
+                                       'hs:b:t:n:r:C:',
+                                       ['help', 'socket=', 'base-url=', 'token=', 'network=', 'region=', 'config='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -105,14 +106,14 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
                 self.token = arg
             elif opt in ('-n', '--network'):
                 self.netid = arg
-            elif opt in ['-c', '--command']:
-                self.command = arg
             elif opt in ['-r', '--region']:
                 self.current_region = arg
             elif opt in ['-C', '--config']:
                 # if path to nsg config file is provided using this parameter, then --token is interpreted as
                 # the path to the configuration parameter in this file
                 self.nsg_config = arg
+            if args:
+                self.command = ' '.join(args)
 
         if self.nsg_config and self.token:
             print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
