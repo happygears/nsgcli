@@ -110,6 +110,8 @@ def transform_remote_command_response_stream(response_generator):
 
         if not line or line.strip() in ['[', ']']:
             continue
+        if line[0] == '[':
+            line = line[1:]
 
         try:
             yield json.loads(line)
