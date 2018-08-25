@@ -386,45 +386,15 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
         @param arg:   words after 'exec' as one string
         """
+        sub_cmd = nsgcli.snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if not arg:
-            self.help_snmp()
+            sub_cmd.cmdloop()
         else:
-            args = arg.split()
-            if args[0] not in SNMP_ARGS:
-                print('Invalid argument "{0}"'.format(arg))
-                self.help_snmp()
-                return
-            elif args[0] == 'get':
-                nsgcli.snmp_commands.snmp_get(self.base_url, self.netid, self.token, args[1:], region=self.current_region)
-            elif args[0] == 'walk':
-                nsgcli.snmp_commands.snmp_walk(self.base_url, self.netid, self.token, args[1:], region=self.current_region)
-            else:
-                self.help_smp()
+            sub_cmd.onecmd(arg)
 
     def help_snmp(self):
-        print('Execute SNMP GET or WALK query remotely on one of the agents in a region. Supported commands: {0}'.format(SNMP_ARGS))
-        print('')
-        print('Syntax:   snmp <command> <address> <oid1> [timeout] ')
-        print('')
-        print('The region is always determined automatically using device allocation configuration.')
-        print('These commands operate only on one target address.')
-        print('OID must be provided in the numeric form, MIB loading is not supported at this time.')
-        print('Optional last argument specifies timeout in seconds')
-        print('')
-        print('Commands:')
-        print('')
-        print('  get:')
-        print('     Arguments: "snmp get <address> oid"')
-        print('     Example:   "snmp get 10.0.0.1 .1.3.6.1.2.1.1.2.0"')
-        print('')
-        print('  ')
-        print('')
-        print('  walk:')
-        print('     Arguments: "snmp walk <address> oid"')
-        print('     Example:   "snmp walk 10.0.0.1 .1.3.6.1.2.1.1.2"')
-        print('')
-        print('  Command "walk" supports only single OID argument')
-        print('')
+        sub_cmd = nsgcli.snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd.help()
 
     def complete_snmp(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, SNMP_ARGS)
