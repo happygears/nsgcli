@@ -116,7 +116,7 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
                 self.command = ' '.join(args)
 
         if self.nsg_config and self.token:
-            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
+            # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
             conf = ConfigFactory.parse_file(self.nsg_config)
             self.token = conf.get_string(self.token)
 
@@ -124,8 +124,8 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
     def summary(self):
         print()
-        # print('Using socket {0}'.format(self.socket))
-        # print()
+        if self.nsg_config and self.token:
+            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
         print('Type "help" to get list of commands; "help command" returns more details about selected command.')
         print('Typing "command" with no arguments executes it or enters this commands context.')
         print('"Tab" autocompletes and to exit, enter "quit", "q" or "Ctrl-D" at the prompt.')

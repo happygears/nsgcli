@@ -180,12 +180,14 @@ class NsgQLCommandLine(Cmd):
                 self.nsg_config = arg
 
         if self.nsg_config and self.access_token:
-            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
+            # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
             conf = ConfigFactory.parse_file(self.nsg_config)
             self.access_token = conf.get_string(self.access_token)
 
     def summary(self):
         print()
+        if self.nsg_config and self.access_token:
+            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
         print('Base url: {0}'.format(self.base_url))
         print('To exit, enter "quit" or "q" at the prompt')
 
