@@ -16,6 +16,7 @@ import sys
 import nsgcli.api
 import nsgcli.index
 import nsgcli.show
+import nsgcli.search
 import nsgcli.exec_commands
 import nsgcli.snmp_commands
 import nsgcli.sub_command
@@ -164,6 +165,22 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
     def complete_show(self, text, _line, _begidx, _endidx):
         sub_cmd = nsgcli.show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
+
+    ##########################################################################################
+    def do_search(self, arg):
+        sub_cmd = nsgcli.search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        if arg:
+            sub_cmd.onecmd(arg)
+        else:
+            sub_cmd.cmdloop()
+
+    def help_search(self):
+        sub_cmd = nsgcli.search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        return sub_cmd.help()
+
+    def complete_search(self, text, _line, _begidx, _endidx):
+        sub_cmd = nsgcli.seach.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################

@@ -169,13 +169,13 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print('Unknown keyword "{0}"; expected "show view id N"'.format(arg))
             return
         # arg must be view Id
-        id = arg.split()[1]
-        view_id = int(id)
-        request = 'v2/ui/net/{0}/views/{1}/map'.format(self.netid, view_id)
         try:
+            id = arg.split()[1]
+            view_id = int(id)
+            request = 'v2/ui/net/{0}/views/{1}/map'.format(self.netid, view_id)
             response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token, stream=True)
         except Exception as ex:
-            return 503, ex
+            print(ex)
         else:
             with response:
                 status = response.status_code
@@ -185,15 +185,19 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                     # the server does not have proper "export view" API function. Instead, I am using
                     # the output of /status API call with some filtering. This is not suitable for
                     # view export/import
-                    response = json.loads(response.content)
-                    filtered = {}
-                    for k in response.keys():
-                        if k in ['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule',
-                                 'generation']:
-                            continue
-                        filtered[k] = response[k]
-                    print(json.dumps(filtered, indent=4))
-                    # print(response['formData'])
+                    try:
+                        response = json.loads(response.content)
+                    except Exception as e:
+                        print(response.content)
+                    else:
+                        filtered = {}
+                        for k in response.keys():
+                            if k in ['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule',
+                                     'generation']:
+                                continue
+                            filtered[k] = response[k]
+                        print(json.dumps(filtered, indent=4))
+                        # print(response['formData'])
 
     def list_views(self):
         """
@@ -307,3 +311,43 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             suffix = index_key[last_dot + 1:]
         return table, column, suffix
 
+    ##########################################################################################
+    def do_device(self, arg):
+        """
+        Inspect device identified by its device Id
+
+        show device device_id [field][,field...]
+
+        Examples:
+
+            show device 159
+            show device 159 tags
+            show device 159 id,generation,boxDescr,tags
+        """
+        if not arg:
+            print('ERROR: at least one argument (device id) is required')
+            return
+        arg_list = arg.split()
+        dev_id = arg_list[0]
+
+        if len(arg_list) > 1:
+            fields = arg_list[1].split(',')
+        else:
+            fields = None
+
+        request = 'v2/ui/net/{0}/devices/{1}'.format(self.netid, dev_id)
+        try:
+            response = nsgcli.api.call(self.base_url, 'GET', request, data={'action': 'status'}, token=self.token)
+        except Exception as ex:
+            return 503, ex
+        else:
+            status = response.status_code
+            if status != 200:
+                print(self.get_error(json.loads(response.content)))
+            else:
+                # resp_dict = json.loads(response.content)
+                dev = json.loads(response.content)
+                if fields is not None:
+                    print(json.dumps({x: dev.get(x, {}) for x in fields}, indent=4))
+                else:
+                    print(json.dumps(dev, indent=4))
