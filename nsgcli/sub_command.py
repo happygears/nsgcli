@@ -8,10 +8,35 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 
+import json
+
+import api
 import cmd
 import types
 
 SKIP_NAMES_FOR_COMPLETION = ['EOF', 'q']
+
+EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
+EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
+
+
+class HashableAgentCommandResponse(set):
+
+    def __init__(self, acr):
+        self.acr = acr
+
+    def __eq__(self, other):
+        return self.acr['uuid'] == other.acr['uuid']
+
+    def __hash__(self):
+        # print(self.acr.items())
+        return hash(self.acr['uuid'])
+
+    def __getitem__(self, item):
+        return self.acr.__getitem__(item)
+
+    def __str__(self):
+        return str(acr)
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -89,3 +114,77 @@ class SubCommand(cmd.Cmd, object):
             return response.get('error', str(response))
         else:
             return str(response)
+
+
+    def common_command(self, command, arg, hide_errors=True, deduplicate_replies=True):
+        """
+        send command to agents and pick up replies. If hide_errors=True, only successful
+        replies are printed, otherwise all replies are printed.
+
+        If deduplicate_replies=True, duplicate replies are suppressed (e.g. when multiple agents
+        reply)
+        """
+        args = arg.split()
+        if not args:
+            print('At least one argument (target address) is required')
+            self.do_help(command)
+            return
+
+        address = args.pop(0)
+        cmd_args = ' '.join(args)
+
+        if self.current_region:
+            req = EXEC_TEMPLATE_WITH_REGION.format(self.netid, command, address, self.current_region, cmd_args)
+        else:
+            req = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, command, address, cmd_args)
+
+        # print(response)
+
+        try:
+            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True)
+        except Exception as ex:
+            print('ERROR: {0}'.format(ex))
+        else:
+            with response:
+                status = response.status_code
+                if status != 200:
+                    for line in response.iter_lines():
+                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
+                        return
+
+                # This call returns list of AgentCommandResponse objects in json format
+                # print(response)
+                replies = []
+                for acr in api.transform_remote_command_response_stream(response):
+                    status = self.parse_status(acr)
+                    if not hide_errors or status == 'ok':
+                        replies.append((status, HashableAgentCommandResponse(acr)))
+                if deduplicate_replies:
+                    for status, acr in set(replies):
+                        self.print_agent_response(acr, status)
+                else:
+                    for status, acr in replies:
+                        self.print_agent_response(acr, status)
+
+    def print_agent_response(self, acr, status):
+        try:
+            if not status or status == 'ok':
+                for line in acr['response']:
+                    print('{0} | {1}'.format(acr['agent'], line))
+            else:
+                print('{0} | {1}'.format(acr['agent'], status))
+        except Exception as e:
+            print(e)
+            print(acr)
+
+    def parse_status(self, acr):
+        ec = acr['exitStatus']
+        if ec == 0:
+            status = 'ok'
+        elif 'error' in acr:
+            status = acr['error']
+        elif ec == -1:
+            status = 'could not find and execute the command'
+        else:
+            status = 'unknown error'
+        return status

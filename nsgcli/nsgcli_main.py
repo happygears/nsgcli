@@ -13,13 +13,14 @@ import json
 from pyhocon import ConfigFactory
 import sys
 
-import nsgcli.api
-import nsgcli.index
-import nsgcli.show
-import nsgcli.search
-import nsgcli.exec_commands
-import nsgcli.snmp_commands
-import nsgcli.sub_command
+import api
+import index
+import show
+import search
+import agent_commands
+import snmp_commands
+import exec_commands
+import sub_command
 
 
 HTTP_OVER_UNIX_SOCKET_PROTOCOL = 'http+unix://'
@@ -63,7 +64,7 @@ class InvalidArgsException(Exception):
     pass
 
 
-class NsgCLI(nsgcli.sub_command.SubCommand, object):
+class NsgCLI(sub_command.SubCommand, object):
     def __init__(self):
         super(NsgCLI, self).__init__(base_url=STANDARD_UNIX_SOCKET_PATH, token='', net_id=1)
         self.base_url = ''
@@ -145,7 +146,7 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
         """
         request = 'v2/ping/net/{0}/se'.format(self.netid)
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:
@@ -153,50 +154,50 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
     ##########################################################################################
     def do_show(self, arg):
-        sub_cmd = nsgcli.show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_show(self):
-        sub_cmd = nsgcli.show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.help()
 
     def complete_show(self, text, _line, _begidx, _endidx):
-        sub_cmd = nsgcli.show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
     def do_search(self, arg):
-        sub_cmd = nsgcli.search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_search(self):
-        sub_cmd = nsgcli.search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.help()
 
     def complete_search(self, text, _line, _begidx, _endidx):
-        sub_cmd = nsgcli.seach.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = seach.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
     def do_index(self, arg):
-        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_index(self):
-        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.help()
 
     def complete_index(self, text, _line, _begidx, _endidx):
-        sub_cmd = nsgcli.index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
@@ -364,33 +365,38 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
         return self.complete_cmd(text, SERVER_ARGS)
 
     ##########################################################################################
-    def do_exec(self, arg):
+    def do_agent(self, arg):
         """
-        exec fping 1.2.3.4
-
-        @param arg:   words after 'exec' as one string
+        agent [agent_name|all] command args
         """
-        sub_cmd = nsgcli.exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = agent_commands.AgentCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if not arg:
             sub_cmd.cmdloop()
         else:
             sub_cmd.onecmd(arg)
-            # args = arg.split()
-            # if args[0] not in EXEC_ARGS:
-            #     print('Invalid argument "{0}"'.format(arg))
-            #     self.help_exec()
-            #     return
-            # elif args[0] == 'traceroute':
-            #     sub_cmd.traceroute(self.base_url, self.netid, args[1:])
-            # elif args[0] == 'ping':
-            #     sub_cmd.ping(self.base_url, self.netid, args[1:])
-            # elif args[0] == 'fping':
-            #     sub_cmd.fping(self.base_url, self.netid, args[1:])
-            # else:
-            #     self.help_exec()
 
     def help_exec(self):
-        sub_cmd = nsgcli.exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = agent_commands.AgentCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd.help()
+
+    def complete_exec(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, EXEC_ARGS)
+
+    ##########################################################################################
+    def do_exec(self, arg):
+        """
+        exec [agent_name|all] fping 1.2.3.4
+
+        @param arg:   words after 'exec' as one string
+        """
+        sub_cmd = exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        if not arg:
+            sub_cmd.cmdloop()
+        else:
+            sub_cmd.onecmd(arg)
+
+    def help_exec(self):
+        sub_cmd = exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region)
         sub_cmd.help()
 
     def complete_exec(self, text, _line, _begidx, _endidx):
@@ -403,14 +409,14 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
 
         @param arg:   words after 'exec' as one string
         """
-        sub_cmd = nsgcli.snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if not arg:
             sub_cmd.cmdloop()
         else:
             sub_cmd.onecmd(arg)
 
     def help_snmp(self):
-        sub_cmd = nsgcli.snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
         sub_cmd.help()
 
     def complete_snmp(self, text, _line, _begidx, _endidx):
@@ -421,7 +427,7 @@ class NsgCLI(nsgcli.sub_command.SubCommand, object):
         execute simple command via API call and return deserialized response
         """
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, data=data, token=self.token)
+            response = api.call(self.base_url, 'GET', request, data=data, token=self.token)
         except Exception as ex:
             return 503, ex
         else:
