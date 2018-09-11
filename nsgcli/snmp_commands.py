@@ -11,7 +11,10 @@ from __future__ import print_function
 import json
 import types
 
-import nsgcli.api
+import api
+import sub_command
+import system
+
 
 SNMP_RESPONSE_FORMAT = """
 Source:   {m[agent]} ({m[agentAddress]})
@@ -22,17 +25,17 @@ SNMP_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&oid=
 SNMP_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&oid={3}&timeout={4}&region={5}'
 
 
-class SnmpCommands(nsgcli.sub_command.SubCommand, object):
+class SnmpCommands(sub_command.SubCommand, object):
     # prompt = "exec # "
 
     def __init__(self, base_url, token, net_id, region=None):
         super(SnmpCommands, self).__init__(base_url, token, net_id, region=region)
         self.current_region = region
-        self.system_commands = nsgcli.system.SystemCommands(self.base_url, self.token, self.netid, region=region)
+        self.system_commands = system.SystemCommands(self.base_url, self.token, self.netid, region=region)
         if region is None:
             self.prompt = 'snmp # '
         else:
-            self.prompt = 'snmp [' + self.current_region + '] # '
+            self.prompt = '[{0}] snmp # '.format(self.current_region)
 
     def help(self):
         print('Execute SNMP GET or WALK query remotely on one of the agents in a region. Supported commands: get, walk')
@@ -94,7 +97,7 @@ class SnmpCommands(nsgcli.sub_command.SubCommand, object):
             req = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, address, oid, timeout_ms, self.current_region)
         # This call returns list of AgentCommandResponse objects in json format
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', req, token=self.token, stream=True, timeout=300)
+            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True, timeout=300)
         except Exception as ex:
             return 503, ex
         else:
@@ -104,7 +107,7 @@ class SnmpCommands(nsgcli.sub_command.SubCommand, object):
                     for line in response.iter_lines():
                         print('ERROR: {0}'.format(self.get_error(json.loads(line))))
                         return
-                for acr in nsgcli.api.transform_remote_command_response_stream(response):
+                for acr in api.transform_remote_command_response_stream(response):
                     # pass
                     # print(acr)
                     status = self.parse_status(acr)

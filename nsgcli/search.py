@@ -8,20 +8,14 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 
-import datetime
-import dateutil.relativedelta
 import json
-import time
 
-from typing import Dict, Any
-
-import nsgcli.api
-import nsgcli.sub_command
-import nsgcli.system
+import api
+import sub_command
 import response_formatter
 
 
-class SearchCommand(nsgcli.sub_command.SubCommand, object):
+class SearchCommand(sub_command.SubCommand, object):
     # prompt = "show # "
 
     def __init__(self, base_url, token, net_id, region=None):
@@ -29,9 +23,9 @@ class SearchCommand(nsgcli.sub_command.SubCommand, object):
         self.table_formatter = response_formatter.ResponseFormatter()
         self.current_region = region
         if region is None:
-            self.prompt = 'show # '
+            self.prompt = 'search # '
         else:
-            self.prompt = 'show [' + self.current_region + '] # '
+            self.prompt = '[{0}] search # '.format(self.current_region)
 
     def completedefault(self, text, _line, _begidx, _endidx):
         return self.get_args(text)
@@ -57,7 +51,7 @@ class SearchCommand(nsgcli.sub_command.SubCommand, object):
                 }
             )
         try:
-            response = nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
+            response = api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
         except Exception as ex:
             return 503, ex
         else:
@@ -70,7 +64,7 @@ class SearchCommand(nsgcli.sub_command.SubCommand, object):
         where match is device id, name, address, serial number or box description
         """
         query = 'SELECT DISTINCT id,name,address,Vendor,SerialNumber,boxDescr FROM devices ' \
-                'WHERE (id={0} OR name REGEXP "^{0}.*$" OR address = "{0}" OR SerialNumber = "{0}" OR boxDescr REGEXP ".*{0}.*") ' \
+                'WHERE (name REGEXP "^{0}.*$" OR address = "{0}" OR SerialNumber = "{0}" OR boxDescr REGEXP ".*{0}.*") ' \
                 'AND Role NOT IN ("Cluster", "SimulatedNode")'
         status, response = self.nsgql_call(query.format(arg))
         if status != 200 or self.is_error(response):
@@ -81,7 +75,7 @@ class SearchCommand(nsgcli.sub_command.SubCommand, object):
 
         request = 'v2/ui/net/{0}/status'.format(self.netid)
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:

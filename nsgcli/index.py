@@ -13,12 +13,11 @@ import json
 
 from typing import Dict, Any
 
-import nsgcli.api
-import nsgcli.sub_command
-import nsgcli.system
+import api
+import sub_command
 
 
-class IndexCommands(nsgcli.sub_command.SubCommand, object):
+class IndexCommands(sub_command.SubCommand, object):
     # prompt = "show # "
 
     def __init__(self, base_url, token, net_id, region=None):
@@ -27,7 +26,7 @@ class IndexCommands(nsgcli.sub_command.SubCommand, object):
         if region is None:
             self.prompt = 'index # '
         else:
-            self.prompt = 'index [' + self.current_region + '] # '
+            self.prompt = '[{0}] index # '.format(self.current_region)
 
     def completedefault(self, text, _line, _begidx, _endidx):
         return self.get_args(text)
@@ -43,7 +42,7 @@ class IndexCommands(nsgcli.sub_command.SubCommand, object):
         """
         request = 'v2/ui/net/{0}/actions/indexes/refresh'.format(self.netid)
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:
@@ -60,7 +59,7 @@ class IndexCommands(nsgcli.sub_command.SubCommand, object):
         """
         request = 'v2/ui/net/{0}/actions/indexes/drop'.format(self.netid)
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:
@@ -77,7 +76,7 @@ class IndexCommands(nsgcli.sub_command.SubCommand, object):
         """
         request = 'v2/ui/net/{0}/actions/indexes/list'.format(self.netid)
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:

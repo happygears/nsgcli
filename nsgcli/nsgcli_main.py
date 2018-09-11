@@ -369,23 +369,38 @@ class NsgCLI(sub_command.SubCommand, object):
         """
         agent [agent_name|all] command args
         """
-        sub_cmd = agent_commands.AgentCommands(self.base_url, self.token, self.netid, region=self.current_region)
         if not arg:
+            print('Invalid command {0}: command "agent" requires at least one argument: agent name'.format(arg))
+            return
+
+        args = arg.split(' ')
+        # arg[0] = agent_name
+        # arg[1] = command
+        if arg[0] == 'find':
+            # this command does not need agent name
+            agent_name = 'all'
+            work_args = args
+        else:
+            agent_name = args.pop(0)
+            work_args = ' '.join(args)
+        if not work_args:
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
             sub_cmd.cmdloop()
         else:
-            sub_cmd.onecmd(arg)
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
+            sub_cmd.onecmd(work_args)
 
-    def help_exec(self):
-        sub_cmd = agent_commands.AgentCommands(self.base_url, self.token, self.netid, region=self.current_region)
+    def help_agent(self):
+        sub_cmd = agent_commands.AgentCommands('', self.base_url, self.token, self.netid, region=self.current_region)
         sub_cmd.help()
 
-    def complete_exec(self, text, _line, _begidx, _endidx):
+    def complete_agent(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, EXEC_ARGS)
 
     ##########################################################################################
     def do_exec(self, arg):
         """
-        exec [agent_name|all] fping 1.2.3.4
+        exec command args
 
         @param arg:   words after 'exec' as one string
         """

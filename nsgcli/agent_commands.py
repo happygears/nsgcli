@@ -47,13 +47,14 @@ class HashableAgentCommandResponse(set):
 class AgentCommands(sub_command.SubCommand, object):
     # prompt = "exec # "
 
-    def __init__(self, base_url, token, net_id, region=None):
+    def __init__(self, agent_name, base_url, token, net_id, region=None):
         super(AgentCommands, self).__init__(base_url, token, net_id, region=region)
+        self.agent_name = agent_name
         self.current_region = region
         if region is None:
-            self.prompt = 'agent # '
+            self.prompt = 'agent {0} # '.format(self.agent_name)
         else:
-            self.prompt = 'agent [' + self.current_region + '] # '
+            self.prompt = '[{0}] agent {1} # '.format(self.current_region, self.agent_name)
 
     def completedefault(self, text, _line, _begidx, _endidx):
         # _line='show system' if user hits Tab after "show system"
@@ -64,11 +65,16 @@ class AgentCommands(sub_command.SubCommand, object):
     def help(self):
         print('Call agents to execute various commands. Arguments: {0}'.format(self.get_args()))
 
+    def make_args(self, input_arg):
+        args = input_arg.split()
+        args.insert(0, self.agent_name) # agent name must be the first argument
+        return ' '.join(args)
+
     def do_log(self, arg):
         """
         retrieve agent's log file
 
-        Example: agent log agent_name [-NN] log_file_name
+        Example: agent agent_name log [-NN] log_file_name
 
         this command assumes standard directory structure on the agent where logs are
         located in /opt/nsg-agent/var/logs
@@ -83,15 +89,9 @@ class AgentCommands(sub_command.SubCommand, object):
         """
         tail a file on an agent.
 
-        Example: agent tail agent_name|all -100 /opt/nsg-agent/home/logs/agent.log
+        Example: agent agent_name tail -100 /opt/nsg-agent/home/logs/agent.log
         """
-        args = arg.split()
-        if not args:
-            print('At least two arguments (agent name and the file path) are required')
-            self.do_help('tail')
-            return
-
-        cmd_args = ' '.join(args)
+        cmd_args = self.make_args(arg)
 
         if self.current_region:
             request = TAIL_TEMPLATE_WITH_REGION.format(self.netid, 'tail', self.current_region, cmd_args)
@@ -116,23 +116,18 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def do_find(self, args):
         """
-        Find an agent responsible for polling given target (IP address).
-        If region has been selected, checks only agents in the region. Otherwise tries
-        agents in all regions
+        Find an agent responsible for polling given target (IP address). This command
+        does not require agent name argument.
 
         Example: agent find 1.2.3.4
         """
         self.common_command('find_agent', args, hide_errors=True)
 
-    def do_restart(self, args):
+    def do_restart(self, arg):
         """
         Restart agent with given name
 
-        Example:  agent restart agent_name
+        Example:  agent agent_name restart
         """
-        if not args:
-            args = 'all'
-        # insert dummy element because common_command() expects the list of arguments to have at least
-        # one item which is not needed for this command.
-        self.common_command('restart_agent', args)
-
+        cmd_args = self.make_args(arg)
+        self.common_command('restart_agent', cmd_args)

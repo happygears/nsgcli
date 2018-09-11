@@ -13,8 +13,8 @@ import datetime
 import json
 import time
 
-import nsgcli.api
-import nsgcli.sub_command
+import api
+import sub_command
 import response_formatter
 
 ROLE_MAP = {
@@ -101,16 +101,17 @@ def parse_table_response(response):
     return res
 
 
-class SystemCommands(nsgcli.sub_command.SubCommand, object):
+class SystemCommands(sub_command.SubCommand, object):
     # prompt = "show system # "
 
     def __init__(self, base_url, token, net_id, region=None):
         super(SystemCommands, self).__init__(base_url, token, net_id, region)
+        self.current_region = region
         self.table_formatter = response_formatter.ResponseFormatter()
         if region is None:
             self.prompt = 'show system # '
         else:
-            self.prompt = 'show system [' + self.current_region + '] # '
+            self.prompt = '[{0}] show system # '.format(self.current_region)
 
     def status_api_call(self):
         """
@@ -118,7 +119,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
         the server does not 'json-stream' response for this API call
         """
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
+            response = api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
                                        token=self.token)
         except Exception as ex:
             return 503, ex
@@ -143,7 +144,7 @@ class SystemCommands(nsgcli.sub_command.SubCommand, object):
                 }
             )
         try:
-            response = nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
+            response = api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
         except Exception as ex:
             return 503, ex
         else:

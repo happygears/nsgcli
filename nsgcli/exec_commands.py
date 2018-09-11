@@ -33,7 +33,7 @@ class ExecCommands(sub_command.SubCommand, object):
         if region is None:
             self.prompt = 'exec # '
         else:
-            self.prompt = 'exec [' + self.current_region + '] # '
+            self.prompt = '[{0}] exec # '.format(self.current_region)
 
     def completedefault(self, text, _line, _begidx, _endidx):
         # _line='show system' if user hits Tab after "show system"
