@@ -21,6 +21,9 @@ import response_formatter
 HTTP_OVER_UNIX_SOCKET_PROTOCOL = 'http+unix://'
 STANDARD_UNIX_SOCKET_PATH = HTTP_OVER_UNIX_SOCKET_PROTOCOL + '/opt/netspyglass/var/data/socket/jetty.sock'
 
+TIME_FORMAT_MS = 'ms'
+TIME_FORMAT_ISO_UTC = 'iso_utc'
+TIME_FORMAT_ISO_LOCAL = 'iso_local'
 
 usage_msg = """
 This script executes NsgQL queries provided on command line or interactively
@@ -28,7 +31,7 @@ This script executes NsgQL queries provided on command line or interactively
 Usage:
 
     nsgql.py [--socket=abs_path_to_unix_socket] [--base-url=url] (-n|--network)=netid [(-f|--format)=format] 
-                [-h|--help] [(-c|--command)=command] [-a|--token=token]
+                [-h|--help] [(-c|--command)=command] [-a|--token=token] [-U|--utc] [-L|--local]
 
        --socket:       a path to the unix socket created by the server that can be used to access it 
                        when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
@@ -42,6 +45,8 @@ Usage:
                        --format=table as an ascii table
        --command:      execute NsgQL queries provided as argument. Multiple NsgQL queries can be separated by ';'
        --token:        API access token string
+       --utc:          print values in the column `time` in ISO 8601 format in UTC
+       --local:        print values in the column `time` in ISO 8601 format in local timezone
        -h --help:      print this usage summary
 
     Parameter --base-url is optional. If it is not provided, the script connects to the server using
@@ -72,7 +77,7 @@ class NsgQLCommandLine(Cmd):
         self.access_token = ''
         self.command = ''
         self.nsg_config = ''
-        self.table_formatter = response_formatter.ResponseFormatter()
+        self.time_format = TIME_FORMAT_MS
 
     def do_help(self, arg):
         usage()
@@ -113,6 +118,7 @@ class NsgQLCommandLine(Cmd):
                     print('ERROR: {0}'.format(json.loads(line)))
                     return None
             else:
+                table_formatter = response_formatter.ResponseFormatter(self.time_format)
                 # print(response)
                 deserialized = response.json()
                 # print(deserialized)
@@ -125,7 +131,7 @@ class NsgQLCommandLine(Cmd):
                             if error:
                                 print('Server error: {0}'.format(error))
                                 continue
-                            self.table_formatter.print_result_as_table(resp)
+                            table_formatter.print_result_as_table(resp)
                         return
                     print(deserialized)
                 except ValueError as e:
@@ -147,8 +153,8 @@ class NsgQLCommandLine(Cmd):
         try:
             opts, args = getopt.getopt(
                 argv,
-                's:b:n:f:c:ha:C:',
-                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'command=', 'raw', 'token=', 'config='])
+                's:b:n:f:c:ha:C:LU',
+                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'command=', 'raw', 'token=', 'config=', 'local', 'utc'])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -178,6 +184,12 @@ class NsgQLCommandLine(Cmd):
                 # if path to nsg config file is provided using this parameter, then --token is interpreted as
                 # the path to the configuration parameter in this file
                 self.nsg_config = arg
+            elif opt in ['-U', '--utc']:
+                # prints time in ISO format in UTC
+                self.time_format = TIME_FORMAT_ISO_UTC
+            elif opt in ['-L', '--local']:
+                # prints time in ISO format in local time zone
+                self.time_format = TIME_FORMAT_ISO_LOCAL
 
         if self.nsg_config and self.access_token:
             # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
@@ -220,10 +232,12 @@ class NsgQLCommandLine(Cmd):
 def main():
     script = NsgQLCommandLine()
     script.parse_args(sys.argv[1:])
-    if script.command:
-        script.onecmd(script.command)
+    try:
+        if script.command:
+            script.onecmd(script.command)
+        else:
+            script.summary()
+            script.prompt = script.base_url + ' > '
+            script.cmdloop()
+    except KeyboardInterrupt as e:
         sys.exit(0)
-    else:
-        script.summary()
-        script.prompt = script.base_url + ' > '
-        script.cmdloop()

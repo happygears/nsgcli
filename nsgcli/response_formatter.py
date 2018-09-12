@@ -18,6 +18,10 @@ MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
 
 PERCENTAGE_VALUE_FIELDS = ['cpuUsage', 'systemMemFreePercent', 'fsUtil']
 
+TIME_FORMAT_MS = 'ms'
+TIME_FORMAT_ISO_UTC = 'iso_utc'
+TIME_FORMAT_ISO_LOCAL = 'iso_local'
+
 
 def sizeof_fmt(num, suffix='B'):
     if not num:
@@ -34,22 +38,27 @@ def percentage_fmt(num):
 
 
 class ResponseFormatter(object):
-    def __init__(self):
+    def __init__(self, time_format=TIME_FORMAT_MS):
         super(ResponseFormatter, self).__init__()
         self.header_divider = '-+-'
         self.cell_divider = ' | '
+        self.time_format = time_format
 
     def print_result_as_table(self, resp):
-        columns = resp.get('columns', [])  # e.g.:   [{u'text': u'device'}]
+        columns = []  # e.g.:   [{u'text': u'device'}]
+        for col in resp.get('columns'):
+            columns.append(self.transform_column_title(col['text']))
+
         rows = resp.get('rows', [])
         widths = {}
         col_num = 0
         for col in columns:
-            widths[col_num] = len(col['text'])
+            widths[col_num] = len(col)
             col_num += 1
         for row in rows:
             el_count = 0
             for element in row:
+                element = self.transform_value(columns[el_count], element)
                 element = str(element).rstrip()
                 w = widths.get(el_count, 0)
                 if len(element) > w:
@@ -60,7 +69,7 @@ class ResponseFormatter(object):
         self.print_table_header_separator(widths)
         for idx in range(0, len(widths)):
             form = '{0:' + str(widths[idx]) + '}'
-            col_txt = form.format(columns[idx]['text'])
+            col_txt = form.format(columns[idx])
             formatted_column_titles.append(col_txt)
             total_width += len(col_txt)
         print(self.cell_divider.join(formatted_column_titles))
@@ -70,7 +79,7 @@ class ResponseFormatter(object):
                 row_elements = []
                 for idx in range(0, len(widths)):
                     form = '{0:' + str(widths[idx]) + '}'
-                    element = self.transform_value(columns[idx].get('text', ''), row[idx])
+                    element = self.transform_value(columns[idx], row[idx])
                     row_txt = form.format(element)
                     row_elements.append(row_txt)
                 print(self.cell_divider.join(row_elements))
@@ -86,6 +95,15 @@ class ResponseFormatter(object):
             header_parts.append('-' * widths[idx])
         print(self.header_divider.join(header_parts))
 
+    def transform_column_title(self, column):
+        if column == 'time':
+            if self.time_format == TIME_FORMAT_ISO_UTC:
+                return column + ' (utc)'
+            elif self.time_format == TIME_FORMAT_ISO_LOCAL:
+                return column + ' (local)'
+        else:
+            return column
+
     def transform_value(self, field_name, value, outdated=False):
         if field_name in ['updatedAt', 'localTimeMs']:
             updated_at_sec = float(value) / 1000
@@ -98,6 +116,16 @@ class ResponseFormatter(object):
         if field_name in ['systemUptime', 'processUptime']:
             td = datetime.timedelta(0, float(value))
             return str(td)
+
+        if field_name.find('time') == 0:
+            if self.time_format == TIME_FORMAT_ISO_UTC:
+                value = datetime.datetime.utcfromtimestamp(float(value) / 1000.0)
+                return value.isoformat(' ')
+            elif self.time_format == TIME_FORMAT_ISO_LOCAL:
+                time_as_dt = datetime.datetime.fromtimestamp(float(value) / 1000.0)
+                return time_as_dt.isoformat(' ')
+            else:
+                return value
 
         # if field_name == 'cpuUsage':
         #     return value + ' %'

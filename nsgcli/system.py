@@ -101,6 +101,17 @@ def parse_table_response(response):
     return res
 
 
+def update_member(member, this_server):
+    roles = transform_roles(member['role'])
+    member['role'] = roles
+    name = member['name']
+    if this_server == name:
+        member['name'] = '*' + name
+    else:
+        member['name'] = ' ' + name
+
+
+# noinspection SqlNoDataSourceInspection
 class SystemCommands(sub_command.SubCommand, object):
     # prompt = "show system # "
 
@@ -309,7 +320,7 @@ class SystemCommands(sub_command.SubCommand, object):
         # sort members once, and do it before I mangle their names
         sorted_members = sorted(status_json['members'], cmp=compare_members)
         for member in sorted_members:
-            self.update_member(member, this_server)
+            update_member(member, this_server)
             for field in names:
                 value = str(member.get(field, ''))
                 member[field] = self.table_formatter.transform_value(field, value, outdated=True)
@@ -332,15 +343,6 @@ class SystemCommands(sub_command.SubCommand, object):
         for member in sorted_members:
             print(format_str.format(m=member))
         print('-' * total_width)
-
-    def update_member(self, member, this_server):
-        roles = transform_roles(member['role'])
-        member['role'] = roles
-        name = member['name']
-        if this_server == name:
-            member['name'] = '*' + name
-        else:
-            member['name'] = ' ' + name
 
     # def is_error(self, response):
     #     return isinstance(response, types.DictionaryType) and response.get('status', '').lower() == 'error'
