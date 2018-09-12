@@ -101,6 +101,8 @@ class ResponseFormatter(object):
                 return column + ' (utc)'
             elif self.time_format == TIME_FORMAT_ISO_LOCAL:
                 return column + ' (local)'
+            else:
+                return column
         else:
             return column
 
