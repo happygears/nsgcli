@@ -24,6 +24,7 @@ TAIL_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}
 TAIL_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?args={2}'
 AGENT_LOG_DIR = '/opt/nsg-agent/var/logs'
 
+
 class HashableAgentCommandResponse(set):
 
     def __init__(self, acr):

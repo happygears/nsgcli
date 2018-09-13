@@ -395,7 +395,8 @@ class NsgCLI(sub_command.SubCommand, object):
         sub_cmd.help()
 
     def complete_agent(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, EXEC_ARGS)
+        sub_cmd = agent_commands.AgentCommands('', self.base_url, self.token, self.netid, region=self.current_region)
+        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
     def do_exec(self, arg):
