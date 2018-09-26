@@ -107,7 +107,7 @@ class ResponseFormatter(object):
             return column
 
     def transform_value(self, field_name, value, outdated=False):
-        if field_name in ['updatedAt', 'localTimeMs']:
+        if field_name in ['updatedAt', 'accessedAt', 'localTimeMs']:
             updated_at_sec = float(value) / 1000
             value = datetime.datetime.fromtimestamp(updated_at_sec)
             suffix = ''
