@@ -272,9 +272,19 @@ class SystemCommands(sub_command.SubCommand, object):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
             self.print_cluster_vars(
-                ['name', 'deviceRepoSize', 'numDevices', 'dataPoolSize', 'numVars',
+                ['name', 'deviceRepoSize', 'monitoredDevices', 'dataPoolSize', 'numVars',
                  'metadataSize', 'metadataMissCount',
                  'lagTotal', 'cycleNumber', 'processUptime', 'updatedAt'],
+                response)
+
+    def do_devices(self, arg):
+        status, response = self.status_api_call()
+        if status != 200 or self.is_error(response):
+            print('ERROR: {0}'.format(self.get_error(response)))
+        else:
+            self.print_cluster_vars(
+                ['name', 'deviceRepoSize', 'physicalDevices', 'cachedDevices', 'monitoredDevices',
+                 'processUptime', 'updatedAt'],
                 response)
 
     def do_version(self, arg):
