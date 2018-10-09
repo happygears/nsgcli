@@ -22,8 +22,9 @@ ROLE_MAP = {
     'primary': 'pri',
     'monitor': 'mon',
     'aggregator': 'agg',
-    'agent': 'agt',
-    'emulator': 'emu'
+    'agent': 'agent',
+    'emulator': 'emu',
+    'indexer': 'idx'
 }
 
 
@@ -59,7 +60,7 @@ def transform_roles(roles):
     """
     Server sends roles as a comma-separated string, e.g. "primary,monitor"
     """
-    return ','.join([ROLE_MAP.get(role, '?') for role in sorted(roles.split(',')) if role != 'primary'])
+    return ','.join([ROLE_MAP.get(role, role) for role in sorted(roles.split(',')) if role != 'primary'])
 
 
 def parse_table_response(response):
