@@ -31,7 +31,7 @@ This script executes NsgQL queries provided on command line or interactively
 Usage:
 
     nsgql.py [--socket=abs_path_to_unix_socket] [--base-url=url] (-n|--network)=netid [(-f|--format)=format] 
-                [-h|--help] [(-c|--command)=command] [-a|--token=token] [-U|--utc] [-L|--local]
+                [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [command]
 
        --socket:       a path to the unix socket created by the server that can be used to access it 
                        when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
@@ -153,8 +153,8 @@ class NsgQLCommandLine(Cmd):
         try:
             opts, args = getopt.getopt(
                 argv,
-                's:b:n:f:c:ha:C:LU',
-                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'command=', 'raw', 'token=', 'config=', 'local', 'utc'])
+                's:b:n:f:ha:C:LU',
+                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'raw', 'token=', 'config=', 'local', 'utc'])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -178,8 +178,6 @@ class NsgQLCommandLine(Cmd):
                 self.raw = True
             elif opt in ['-a', '--token', '--access']:
                 self.access_token = arg
-            elif opt in ['-c', '--command']:
-                self.command = arg
             elif opt in ['-C', '--config']:
                 # if path to nsg config file is provided using this parameter, then --token is interpreted as
                 # the path to the configuration parameter in this file
@@ -190,6 +188,8 @@ class NsgQLCommandLine(Cmd):
             elif opt in ['-L', '--local']:
                 # prints time in ISO format in local time zone
                 self.time_format = TIME_FORMAT_ISO_LOCAL
+            if args:
+                self.command = ' '.join(args)
 
         if self.nsg_config and self.access_token:
             # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
@@ -234,6 +234,7 @@ def main():
     script.parse_args(sys.argv[1:])
     try:
         if script.command:
+            print('Command={0}'.format(script.command))
             script.onecmd(script.command)
         else:
             script.summary()
