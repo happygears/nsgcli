@@ -226,7 +226,7 @@ class NsgQLCommandLine(Cmd):
                     }
                 )
 
-        return nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.access_token, stream=True)
+        return nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.access_token, stream=True, timeout=180)
 
 
 def main():
