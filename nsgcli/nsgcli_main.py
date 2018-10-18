@@ -36,6 +36,7 @@ SERVER_ARGS = ['pause', 'status']
 EXEC_ARGS = ['ping', 'fping', 'traceroute']
 FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
+DISCOVERY_ARGS = ['start']
 
 usage_msg = """
 Interactive NetSpyGlass control script. This script can only communicate with 
@@ -246,6 +247,22 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_make(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, MAKE_ARGS)
+
+    ##########################################################################################
+    def do_discovery(self, arg):
+        if arg not in DISCOVERY_ARGS:
+            print('Invalid argument "{0}"'.format(arg))
+            return
+        request = 'v2/nsg/discovery/net/{0}/{1}'.format(self.netid, arg)
+        response = self.basic_command(request)
+        if response is not None:
+            self.print_response(response)
+
+    def help_discovery(self):
+        print('Operations with network discovery. Supported arguments: {0}'.format(DISCOVERY_ARGS))
+
+    def complete_discovery(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, DISCOVERY_ARGS)
 
     ##########################################################################################
     def do_restart(self, arg):
