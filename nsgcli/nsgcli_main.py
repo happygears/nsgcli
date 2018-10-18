@@ -37,6 +37,7 @@ EXEC_ARGS = ['ping', 'fping', 'traceroute']
 FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start']
+HUD_ARGS = ['reset']
 
 usage_msg = """
 Interactive NetSpyGlass control script. This script can only communicate with 
@@ -263,6 +264,22 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DISCOVERY_ARGS)
+
+    ##########################################################################################
+    def do_hud(self, arg):
+        if arg not in HUD_ARGS:
+            print('Invalid argument "{0}"'.format(arg))
+            return
+        request = 'v2/nsg/test/net/{0}/hud/{1}'.format(self.netid, arg)
+        response = self.basic_command(request)
+        if response is not None:
+            self.print_response(response)
+
+    def help_hud(self):
+        print('Operations with HUD in the UI. Supported arguments: {0}'.format(HUD_ARGS))
+
+    def complete_hud(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, HUD_ARGS)
 
     ##########################################################################################
     def do_restart(self, arg):
