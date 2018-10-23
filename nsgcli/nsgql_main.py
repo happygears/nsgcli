@@ -31,7 +31,7 @@ This script executes NsgQL queries provided on command line or interactively
 Usage:
 
     nsgql.py [--socket=abs_path_to_unix_socket] [--base-url=url] (-n|--network)=netid [(-f|--format)=format] 
-                [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [command]
+                [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [(-t|--timeout)=timeout_sec] [command]
 
        --socket:       a path to the unix socket created by the server that can be used to access it 
                        when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
@@ -47,6 +47,7 @@ Usage:
        --token:        API access token string
        --utc:          print values in the column `time` in ISO 8601 format in UTC
        --local:        print values in the column `time` in ISO 8601 format in local timezone
+       --timeout:      timeout, seconds
        -h --help:      print this usage summary
 
     Parameter --base-url is optional. If it is not provided, the script connects to the server using
@@ -78,6 +79,7 @@ class NsgQLCommandLine(Cmd):
         self.command = ''
         self.nsg_config = ''
         self.time_format = TIME_FORMAT_MS
+        self.timeout_sec = 180
 
     def do_help(self, arg):
         usage()
@@ -153,8 +155,9 @@ class NsgQLCommandLine(Cmd):
         try:
             opts, args = getopt.getopt(
                 argv,
-                's:b:n:f:ha:C:LU',
-                ['help', 'socket=', 'base-url=', 'network=', 'format=', 'raw', 'token=', 'config=', 'local', 'utc'])
+                's:b:n:f:ha:C:LUt:',
+                ['help', 'socket=', 'base-url=', 'network=', 'format=',
+                 'raw', 'token=', 'config=', 'local', 'utc', 'timeout='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -188,6 +191,8 @@ class NsgQLCommandLine(Cmd):
             elif opt in ['-L', '--local']:
                 # prints time in ISO format in local time zone
                 self.time_format = TIME_FORMAT_ISO_LOCAL
+            elif opt in ['-t', '--timeout']:
+                self.timeout_sec = int(arg)
             if args:
                 self.command = ' '.join(args)
 
@@ -226,7 +231,8 @@ class NsgQLCommandLine(Cmd):
                     }
                 )
 
-        return nsgcli.api.call(self.base_url, 'POST', path, data=nsgql, token=self.access_token, stream=True, timeout=180)
+        return nsgcli.api.call(self.base_url, 'POST', path,
+                               data=nsgql, token=self.access_token, stream=True, timeout=self.timeout_sec)
 
 
 def main():
