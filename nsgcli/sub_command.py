@@ -110,11 +110,26 @@ class SubCommand(cmd.Cmd, object):
         return isinstance(response, types.DictionaryType) and response.get('status', 'ok').lower() != 'ok'
 
     def get_error(self, response):
+        """
+        if the response is in standard form (a dictionary with key 'error' or 'success') then
+        this function finds and returns the value of the key 'error'. Otherwise it returns
+        the whole response as a string
+        """
         if isinstance(response, dict):
             return response.get('error', str(response))
         else:
             return str(response)
 
+    def get_success(self, response):
+        """
+        if the response is in standard form (a dictionary with key 'error' or 'success') then
+        this function finds and returns the value of the key 'success'. Otherwise it returns
+        the whole response as a string
+        """
+        if isinstance(response, dict):
+            return response.get('success', str(response))
+        else:
+            return str(response)
 
     def common_command(self, command, arg, hide_errors=True, deduplicate_replies=True):
         """

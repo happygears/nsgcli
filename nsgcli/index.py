@@ -38,7 +38,7 @@ class IndexCommands(sub_command.SubCommand, object):
 
     def do_refresh(self, arg):
         """
-        List NsgQL indexes and their cardinality
+        Refresh all NsgQL indexes
         """
         request = 'v2/ui/net/{0}/actions/indexes/refresh'.format(self.netid)
         try:
@@ -69,6 +69,59 @@ class IndexCommands(sub_command.SubCommand, object):
                     print('ERROR: {0}'.format(self.get_error(json.loads(response.content))))
                 else:
                     print(response.content)
+
+    def do_create(self, arg):
+        """
+        Create NsgQL index described by the table name and column name with optional function and boolean flag
+        to make the index sort in descending order
+
+        index create table_name column_name function_name
+
+        The function is only applicable when column name is equal to 'metric'.
+
+        Supported function names: tslast, tsmin, tsmax
+
+        Examples:
+
+             index create ifInRate ifDescription
+             index create ifInRate metric tslast
+             index create ifInRate metric tsmax
+
+        """
+        request = 'v2/ui/net/{0}/actions/indexes/create'.format(self.netid)
+        args = arg.split()
+        if len(args) < 2:
+            print('ERROR: insufficient arguments for the command. Try "help index create"')
+            return
+        table = args[0]
+        column = args[1]
+        nsgql_function = ''
+        if len(args) > 2:
+            nsgql_function = args[2]
+        if nsgql_function not in ['', 'tslast', 'tsmin', 'tsmax']:
+            print('ERROR: unsupported function "{0}"'.format(nsgql_function))
+            return
+
+        body = {
+            'table': table,
+            'column': column,
+            'function': nsgql_function
+        }
+
+        try:
+            response = api.call(self.base_url, 'POST', request, token=self.token, data=body)
+        except Exception as ex:
+            return 503, ex
+        else:
+            result = ''
+            with response:
+                status = response.status_code
+                response_dict = json.loads(response.content)
+                if status != 200:
+                    result = 'ERROR: {0}'.format(self.get_error(response_dict))
+                else:
+                    result = self.get_success(response_dict)
+            print('Creating index {0}:{1}:{2} -- {3}'.format(table, column, nsgql_function, result))
 
     def do_show(self, arg):
         """
