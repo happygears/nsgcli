@@ -20,9 +20,34 @@ Status: {m[status]}
 Output: 
 {m[output]}"""
 
-TAIL_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
-TAIL_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?args={2}'
+CMD_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
+CMD_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?args={2}'
 AGENT_LOG_DIR = '/opt/nsg-agent/var/logs'
+HELP = """
+Call agents to execute various commands.
+        
+log:    retrieve agent's log file
+        this command assumes standard directory structure on the agent where logs are
+        located in /opt/nsg-agent/var/logs
+
+        Example: agent <agent_name> log [-NN] <log_file_name>
+
+
+tail: tail a file on an agent.
+
+        Example: agent <agent_name> tail -100 /opt/nsg-agent/home/logs/agent.log
+
+
+probe_snmp: discover working snmp configuration for the device
+
+        Example: agent <agent_name> probe_snmp <device_address> <snmp_conf_name_1> <snmp_conf_name_2> ...
+
+
+find: Find an agent responsible for polling given target (IP address). Use 'all' in place of the agent name.
+
+        Example: agent all find 1.2.3.4
+
+"""
 
 
 class HashableAgentCommandResponse(set):
@@ -64,7 +89,7 @@ class AgentCommands(sub_command.SubCommand, object):
         return self.get_args(text)
 
     def help(self):
-        print('Call agents to execute various commands. Arguments: {0}'.format(self.get_args()))
+        print(HELP)
 
     def make_args(self, input_arg):
         args = input_arg.split()
@@ -95,9 +120,38 @@ class AgentCommands(sub_command.SubCommand, object):
         cmd_args = self.make_args(arg)
 
         if self.current_region:
-            request = TAIL_TEMPLATE_WITH_REGION.format(self.netid, 'tail', self.current_region, cmd_args)
+            request = CMD_TEMPLATE_WITH_REGION.format(self.netid, 'tail', self.current_region, cmd_args)
         else:
-            request = TAIL_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
+            request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
+
+        try:
+            response = api.call(self.base_url, 'GET', request, token=self.token, stream=True)
+        except Exception as ex:
+            print('ERROR: {0}'.format(ex))
+        else:
+            with response:
+                status = response.status_code
+                if status != 200:
+                    for line in response.iter_lines():
+                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
+                        return
+
+                for acr in api.transform_remote_command_response_stream(response):
+                    status = self.parse_status(acr)
+                    self.print_agent_response(acr, status)
+
+    def do_probe_snmp(self, arg):
+        """
+        try to discover working snmp configuration for the device
+
+        Example: agent agent_name probe_snmp <device_address> <snmp_conf_name_1> <snmp_conf_name_2> ...
+        """
+        cmd_args = self.make_args(arg)
+
+        if self.current_region:
+            request = CMD_TEMPLATE_WITH_REGION.format(self.netid, 'discover-snmp-access', self.current_region, cmd_args)
+        else:
+            request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'discover-snmp-access', cmd_args)
 
         try:
             response = api.call(self.base_url, 'GET', request, token=self.token, stream=True)
