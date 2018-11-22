@@ -236,6 +236,16 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
+    def do_agent_command_executor(self, arg):
+        status, response = self.nsgql_call(
+            'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
+            'FROM poolSize ORDER BY device')
+        if status != 200 or self.is_error(response):
+            print('ERROR: {0}'.format(self.get_error(response)))
+        else:
+            response = response[0]
+            self.table_formatter.print_result_as_table(response)
+
     def do_redis(self, arg):
         status, response = self.nsgql_call(
             'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,redisUsedMemory,redisMaxMemory,'
