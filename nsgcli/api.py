@@ -22,7 +22,7 @@ except ImportError:
     import httplib
 
 
-def call(base_url, method, uri_path, data=None, token=None, timeout=30, stream=True):
+def call(base_url, method, uri_path, data=None, token=None, timeout=180, stream=True):
     """
     Make NetSpyGlass JSON API call to execute query
 
