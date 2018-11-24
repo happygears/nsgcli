@@ -8,6 +8,7 @@ This module implements the NetSpyGlass API
 
 from __future__ import print_function
 
+import copy
 import json
 
 # from requests.packages import urllib3
@@ -22,7 +23,7 @@ except ImportError:
     import httplib
 
 
-def call(base_url, method, uri_path, data=None, token=None, timeout=180, stream=True):
+def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
     """
     Make NetSpyGlass JSON API call to execute query
 
@@ -35,6 +36,7 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, stream=
     :param token:        - (optional) access token if we talk to the server over the network rather than
                             unix socket
     :param timeout:      - timeout, seconds
+    :param headers:      - http request headers
     :param stream:       - if True, return result as a stream (default=True)
     """
 # disable warning
@@ -43,25 +45,28 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, stream=
     urllib3.disable_warnings()
 
     if 'http+unix://' in base_url:
-        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, stream=stream)
+        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers, stream=stream)
     else:
-        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, stream=stream)
+        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers, stream=stream)
 
 
-def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, stream=True):
+def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, headers=None, stream=True):
     url = make_socket_url(base_url, uri_path)
-    return make_call(url, method, data, timeout, {}, stream=stream)
+    return make_call(url, method, data, timeout, headers={}, stream=stream)
 
 
-def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, stream=True):
+def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, headers=None, stream=True):
     """
     returns a generator that yields tuples [http_code, line]
     """
     url = concatenate_url(base_url, uri_path)
-    headers = None
+    if headers is None:
+        send_headers = {}
+    else:
+        send_headers = copy.copy(headers)
     if token is not None:
-        headers = {'X-NSG-Auth-API-Token': token}
-    return make_call(url, method, data, timeout, headers, stream=stream)
+        send_headers['X-NSG-Auth-API-Token'] = token
+    return make_call(url, method, data, timeout, headers=send_headers, stream=stream)
 
 
 def make_call(url, method, data, timeout, headers, stream=False):

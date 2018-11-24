@@ -156,7 +156,8 @@ class SubCommand(cmd.Cmd, object):
         # print(response)
 
         try:
-            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True)
+            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+            response = api.call(self.base_url, 'GET', req, token=self.token, headers=headers, stream=True)
         except Exception as ex:
             print('ERROR: {0}'.format(ex))
         else:

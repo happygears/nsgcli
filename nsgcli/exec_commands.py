@@ -74,7 +74,8 @@ class ExecCommands(sub_command.SubCommand, object):
             request = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, 'fping', address, cmd_args)
 
         try:
-            response = api.call(self.base_url, 'GET', request, token=self.token, stream=True)
+            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+            response = api.call(self.base_url, 'GET', request, token=self.token, headers=headers, stream=True)
         except Exception as ex:
             print('ERROR: {0}'.format(ex))
         else:

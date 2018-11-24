@@ -97,7 +97,8 @@ class SnmpCommands(sub_command.SubCommand, object):
             req = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, address, oid, timeout_ms, self.current_region)
         # This call returns list of AgentCommandResponse objects in json format
         try:
-            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True, timeout=300)
+            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True, headers=headers, timeout=300)
         except Exception as ex:
             return 503, ex
         else:
