@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(name='nsgcli',
-                 version='1.0.21',
+                 version='1.0.22',
                  description='NetSpyGlass CLI',
                  long_description=long_description,
                  long_description_content_type="text/markdown",
@@ -21,7 +21,7 @@ setuptools.setup(name='nsgcli',
                  license='Apache',
                  packages=setuptools.find_packages(),
                  install_requires=[
-                     'requests', 'requests-unixsocket', 'pyhocon', 'typing'
+                     'requests', 'requests-unixsocket', 'pyhocon', 'typing', 'python-dateutil'
                  ],
                  scripts=['bin/nsgcli', 'bin/nsgql'],
                  include_package_data=True,
