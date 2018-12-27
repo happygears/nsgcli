@@ -38,6 +38,7 @@ FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start']
 HUD_ARGS = ['reset']
+NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
 usage_msg = """
 Interactive NetSpyGlass control script. This script can only communicate with 
@@ -216,6 +217,21 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_cache(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, CACHE_ARGS)
+
+    ##########################################################################################
+    def do_nsgql(self, arg):
+        if arg not in NSGQL_ARGS:
+            print('Invalid argument "{0}"'.format(arg))
+            return
+        response = self.basic_command('v2/ui/net/{0}/actions/nsgqlschema/{1}'.format(self.netid, arg))
+        if response is not None:
+            self.print_response(response)
+
+    def help_nsgql(self):
+        print('Operations with NsgQL schema. Supported arguments: {0}'.format(NSGQL_ARGS))
+
+    def complete_nsgql(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, NSGQL_ARGS)
 
     ##########################################################################################
     def do_reload(self, arg):
