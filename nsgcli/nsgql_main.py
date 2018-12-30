@@ -135,7 +135,8 @@ class NsgQLCommandLine(Cmd):
                                 continue
                             table_formatter.print_result_as_table(resp)
                         return
-                    print(deserialized)
+                    print(json.dumps(deserialized))
+                    # print(deserialized)
                 except ValueError as e:
                     print('Error: {0}'.format(e))
 
@@ -240,7 +241,7 @@ def main():
     script.parse_args(sys.argv[1:])
     try:
         if script.command:
-            print('Command={0}'.format(script.command))
+            # print('Command={0}'.format(script.command))
             script.onecmd(script.command)
         else:
             script.summary()
