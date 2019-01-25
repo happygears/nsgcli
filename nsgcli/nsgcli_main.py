@@ -323,7 +323,13 @@ class NsgCLI(sub_command.SubCommand, object):
         """
         Set debug level and optional argument with optional timeout:
 
-        debug level [arg] [time_min]
+        debug level
+        OR
+        debug level arg time_min
+
+        If only one argument is given, it is assumed to be the debug level and it will be set for 10 min.
+        If three arguments are given, they are interpreted as debug level, debug argument and the time in
+        minutes.
 
         Debug level and argument are passed to all servers in the cluster via inter-process message bus.
         Timeout is in minutes. Debug level reverts to its current value and argument
@@ -355,19 +361,17 @@ class NsgCLI(sub_command.SubCommand, object):
             return
         # arg can be either just a number or two numbers separated by a space
         try:
-            comps = arg.split(' ')
+            comps = arg.split()
             level = int(comps[0])
             if len(comps) == 1:
+                # only level has been specified
                 arg = ''
                 time = 10
-            elif len(comps) == 2:
-                arg = ''
-                time = int(comps[1])
             elif len(comps) == 3:
                 arg = comps[1]
                 time = int(comps[2])
             else:
-                print('Invalid number of arguments; see "help debug"'.format(arg))
+                print('Invalid number of arguments; expected 1 or 3 arguments, but got {0}'.format(arg))
                 return
             request = 'v2/nsg/test/net/{0}/debug?level={1}&time={2}&arg={3}'.format(self.netid, level, time, arg)
             response = self.basic_command(request)
