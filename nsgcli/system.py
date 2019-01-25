@@ -344,7 +344,7 @@ class SystemCommands(sub_command.SubCommand, object):
             update_member(member, this_server)
             for field in names:
                 value = str(member.get(field, ''))
-                member[field] = self.table_formatter.transform_value(field, value, outdated=True)
+                member[field] = self.table_formatter.transform_value(field, value)
 
         for member in sorted_members:
             for field in field_width.keys():

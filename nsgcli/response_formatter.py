@@ -11,6 +11,7 @@ import datetime
 import numbers
 import time
 
+TIME_COLUMNS = ['time', 'updatedAt', 'accessedAt', 'localTimeMs', 'activeSince']
 
 MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
                        'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',
@@ -47,13 +48,13 @@ class ResponseFormatter(object):
     def print_result_as_table(self, resp):
         columns = []  # e.g.:   [{u'text': u'device'}]
         for col in resp.get('columns'):
-            columns.append(self.transform_column_title(col['text']))
+            columns.append(col['text'])
 
         rows = resp.get('rows', [])
         widths = {}
         col_num = 0
         for col in columns:
-            widths[col_num] = len(col)
+            widths[col_num] = len(self.transform_column_title(col))
             col_num += 1
         for row in rows:
             el_count = 0
@@ -69,7 +70,7 @@ class ResponseFormatter(object):
         self.print_table_header_separator(widths)
         for idx in range(0, len(widths)):
             form = '{0:' + str(widths[idx]) + '}'
-            col_txt = form.format(columns[idx])
+            col_txt = form.format(self.transform_column_title(columns[idx]))
             formatted_column_titles.append(col_txt)
             total_width += len(col_txt)
         print(self.cell_divider.join(formatted_column_titles))
@@ -96,7 +97,7 @@ class ResponseFormatter(object):
         print(self.header_divider.join(header_parts))
 
     def transform_column_title(self, column):
-        if column == 'time':
+        if column in TIME_COLUMNS:
             if self.time_format == TIME_FORMAT_ISO_UTC:
                 return column + ' (utc)'
             elif self.time_format == TIME_FORMAT_ISO_LOCAL:
@@ -106,20 +107,12 @@ class ResponseFormatter(object):
         else:
             return column
 
-    def transform_value(self, field_name, value, outdated=False):
-        if field_name in ['updatedAt', 'accessedAt', 'localTimeMs']:
-            updated_at_sec = float(value) / 1000
-            value = datetime.datetime.fromtimestamp(updated_at_sec)
-            suffix = ''
-            if outdated and time.time() - updated_at_sec > 15:
-                suffix = ' outdated'
-            return value.strftime('%Y-%m-%d %H:%M:%S') + suffix
-
+    def transform_value(self, field_name, value):
         if field_name in ['systemUptime', 'processUptime']:
             td = datetime.timedelta(0, float(value))
             return str(td)
 
-        if field_name.find('time') == 0:
+        if field_name in TIME_COLUMNS:
             if self.time_format == TIME_FORMAT_ISO_UTC:
                 value = datetime.datetime.utcfromtimestamp(float(value) / 1000.0)
                 return value.isoformat(' ')
