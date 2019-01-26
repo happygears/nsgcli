@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+
+import nsgcli.silence_main
+
+nsgcli.silence_main.main()

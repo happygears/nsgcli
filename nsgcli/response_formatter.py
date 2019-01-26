@@ -11,7 +11,7 @@ import datetime
 import numbers
 import time
 
-TIME_COLUMNS = ['time', 'updatedAt', 'accessedAt', 'localTimeMs', 'activeSince']
+TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince']
 
 MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
                        'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',

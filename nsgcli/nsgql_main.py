@@ -18,9 +18,6 @@ import nsgcli.api
 import response_formatter
 
 
-HTTP_OVER_UNIX_SOCKET_PROTOCOL = 'http+unix://'
-STANDARD_UNIX_SOCKET_PATH = HTTP_OVER_UNIX_SOCKET_PROTOCOL + '/opt/netspyglass/var/data/socket/jetty.sock'
-
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
 TIME_FORMAT_ISO_LOCAL = 'iso_local'
@@ -30,14 +27,12 @@ This script executes NsgQL queries provided on command line or interactively
 
 Usage:
 
-    nsgql.py [--socket=abs_path_to_unix_socket] [--base-url=url] (-n|--network)=netid [(-f|--format)=format] 
-                [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [(-t|--timeout)=timeout_sec] [command]
+    nsgql.py --base-url=url (-n|--network)=netid [(-f|--format)=format] 
+            [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [(-t|--timeout)=timeout_sec] [command]
 
-       --socket:       a path to the unix socket created by the server that can be used to access it 
-                       when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
        --base-url:     Base URL for the NetSpyGlass UI backend server. This includes protocol (http/https),
                        server name or address and port number. Examples: http://localhost:9100 , https://nsg-server:9100
-                       Either --base-url or --socket must be provided.
+                       --base-url must be provided.
        --network:      NetSpyGlass network id (a number, default: 1). 
        --format:       how to format query result. This can be one of 'list', 'table', 'time_series', 'json'. 
                        Default is 'table'
@@ -49,10 +44,6 @@ Usage:
        --local:        print values in the column `time` in ISO 8601 format in local timezone
        --timeout:      timeout, seconds
        -h --help:      print this usage summary
-
-    Parameter --base-url is optional. If it is not provided, the script connects to the server using
-    Unix socket. This works only if the script runs on the same machine and if the user running the script
-    has permissions to read and write to the socket. Usually, this would be used `nw2` or root. 
 
 """
 
@@ -69,7 +60,7 @@ class NsgQLCommandLine(Cmd):
 
     def __init__(self):
         Cmd.__init__(self)
-        self.base_url = STANDARD_UNIX_SOCKET_PATH
+        self.base_url = ''
         # self.server = ''
         # self.port = 9100
         self.netid = 1
@@ -157,7 +148,7 @@ class NsgQLCommandLine(Cmd):
             opts, args = getopt.getopt(
                 argv,
                 's:b:n:f:ha:C:LUt:',
-                ['help', 'socket=', 'base-url=', 'network=', 'format=',
+                ['help', 'base-url=', 'network=', 'format=',
                  'raw', 'token=', 'config=', 'local', 'utc', 'timeout='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
@@ -167,11 +158,6 @@ class NsgQLCommandLine(Cmd):
             if opt in ['-h', '--help']:
                 usage()
                 sys.exit(3)
-            elif opt in ('-s', '--socket'):
-                if arg[0] != '/':
-                    print('Argument of --socket must be an absolute path to the unix socket')
-                    sys.exit(1)
-                self.base_url = HTTP_OVER_UNIX_SOCKET_PROTOCOL + arg
             elif opt in ('-b', '--base-url'):
                 self.base_url = arg
             elif opt in ['-n', '--network']:

@@ -23,9 +23,6 @@ import exec_commands
 import sub_command
 
 
-HTTP_OVER_UNIX_SOCKET_PROTOCOL = 'http+unix://'
-STANDARD_UNIX_SOCKET_PATH = HTTP_OVER_UNIX_SOCKET_PROTOCOL + '/opt/netspyglass/var/data/socket/jetty.sock'
-
 # SHOW_ARGS = ['version', 'uuid']
 CACHE_ARGS = ['clear', 'refresh']
 MAKE_ARGS = ['views', 'variables', 'maps', 'tags']
@@ -46,11 +43,10 @@ NetSpyGlass server running on the same machine.
 
 Usage:
 
-    nsgcli.py [--socket=abs_path_to_unix_socket] [--base-url=url] [--token=token] [--network=netid] [--region=region] [command]
+    nsgcli.py --base-url=url [--token=token] [--network=netid] [--region=region] [command]
     
-    --socket:    a path to the unix socket created by the server that can be used to access it 
-                 when script runs on the same machine. Usually /opt/netspyglass/home/data/socket/jetty.sock
     --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
+                 --base-url must be provided.
     --token:     server API access token (if the server is configured with user authentication)
     --region:    if present, all commands will be executed on given region. Equivalent to the command 'region' in
                  the interactive mode.
@@ -69,12 +65,12 @@ class InvalidArgsException(Exception):
 
 class NsgCLI(sub_command.SubCommand, object):
     def __init__(self):
-        super(NsgCLI, self).__init__(base_url=STANDARD_UNIX_SOCKET_PATH, token='', net_id=1)
+        super(NsgCLI, self).__init__(base_url='', token='', net_id=1)
         self.base_url = ''
+        self.token = ''
         self.command = ''
         self.current_region = None
         self.nsg_config = ''
-        self.token = ''
         self.netid = 1
         self.prompt = ' > '
         # self.prompt = lambda _: self.make_prompt()
@@ -91,7 +87,7 @@ class NsgCLI(sub_command.SubCommand, object):
         try:
             opts, args = getopt.getopt(argv,
                                        'hs:b:t:n:r:C:',
-                                       ['help', 'socket=', 'base-url=', 'token=', 'network=', 'region=', 'config='])
+                                       ['help', 'base-url=', 'token=', 'network=', 'region=', 'config='])
         except getopt.GetoptError as ex:
             print('UNKNOWN: Invalid Argument:' + str(ex))
             raise InvalidArgsException
@@ -100,11 +96,6 @@ class NsgCLI(sub_command.SubCommand, object):
             if opt in ['-h', '--help']:
                 usage()
                 sys.exit(3)
-            elif opt in ('-s', '--socket'):
-                if arg[0] != '/':
-                    print('Argument of --socket must be an absolute path to the unix socket')
-                    sys.exit(1)
-                self.base_url = HTTP_OVER_UNIX_SOCKET_PROTOCOL + arg
             elif opt in ('-b', '--base-url'):
                 self.base_url = arg.rstrip('/ ')
             elif opt in ('-a', '--token'):
