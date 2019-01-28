@@ -8,10 +8,7 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 
-import getopt
 import json
-from pyhocon import ConfigFactory
-import sys
 from cmd import Cmd
 
 import nsgcli.api
@@ -22,58 +19,19 @@ TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
 TIME_FORMAT_ISO_LOCAL = 'iso_local'
 
-usage_msg = """
-This script executes NsgQL queries provided on command line or interactively
-
-Usage:
-
-    nsgql.py --base-url=url (-n|--network)=netid [(-f|--format)=format] 
-            [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [(-t|--timeout)=timeout_sec] [command]
-
-       --base-url:     Base URL for the NetSpyGlass UI backend server. This includes protocol (http/https),
-                       server name or address and port number. Examples: http://localhost:9100 , https://nsg-server:9100
-                       --base-url must be provided.
-       --network:      NetSpyGlass network id (a number, default: 1). 
-       --format:       how to format query result. This can be one of 'list', 'table', 'time_series', 'json'. 
-                       Default is 'table'
-       --raw:          print data as returned by the server. Specifically, do not try to print data returned for
-                       --format=table as an ascii table
-       --command:      execute NsgQL queries provided as argument. Multiple NsgQL queries can be separated by ';'
-       --token:        API access token string
-       --utc:          print values in the column `time` in ISO 8601 format in UTC
-       --local:        print values in the column `time` in ISO 8601 format in local timezone
-       --timeout:      timeout, seconds
-       -h --help:      print this usage summary
-
-"""
-
-
-def usage():
-    print(usage_msg)
-
-
-class InvalidArgsException(Exception):
-    pass
-
 
 class NsgQLCommandLine(Cmd):
 
-    def __init__(self):
+    def __init__(self, base_url=None, token=None, netid=1, output_format='table', raw=False,
+                 time_format=TIME_FORMAT_MS, timeout_set=180):
         Cmd.__init__(self)
-        self.base_url = ''
-        # self.server = ''
-        # self.port = 9100
-        self.netid = 1
-        self.format = 'table'
-        self.raw = False
-        self.access_token = ''
-        self.command = ''
-        self.nsg_config = ''
-        self.time_format = TIME_FORMAT_MS
-        self.timeout_sec = 180
-
-    def do_help(self, arg):
-        usage()
+        self.base_url = base_url
+        self.access_token = token
+        self.netid = netid
+        self.format = output_format
+        self.raw = raw
+        self.time_format = time_format
+        self.timeout_sec = timeout_set
 
     def do_q(self, arg):
         """Quits the program."""
@@ -142,56 +100,8 @@ class NsgQLCommandLine(Cmd):
             return self.is_error(resp_obj)
         return None
 
-    def parse_args(self, argv):
-
-        try:
-            opts, args = getopt.getopt(
-                argv,
-                's:b:n:f:ha:C:LUt:',
-                ['help', 'base-url=', 'network=', 'format=',
-                 'raw', 'token=', 'config=', 'local', 'utc', 'timeout='])
-        except getopt.GetoptError as ex:
-            print('UNKNOWN: Invalid Argument:' + str(ex))
-            raise InvalidArgsException
-
-        for opt, arg in opts:
-            if opt in ['-h', '--help']:
-                usage()
-                sys.exit(3)
-            elif opt in ('-b', '--base-url'):
-                self.base_url = arg
-            elif opt in ['-n', '--network']:
-                self.netid = int(arg)
-            elif opt in ['-f', '--format']:
-                self.format = arg
-            elif opt in ['-r', '--raw']:
-                self.raw = True
-            elif opt in ['-a', '--token', '--access']:
-                self.access_token = arg
-            elif opt in ['-C', '--config']:
-                # if path to nsg config file is provided using this parameter, then --token is interpreted as
-                # the path to the configuration parameter in this file
-                self.nsg_config = arg
-            elif opt in ['-U', '--utc']:
-                # prints time in ISO format in UTC
-                self.time_format = TIME_FORMAT_ISO_UTC
-            elif opt in ['-L', '--local']:
-                # prints time in ISO format in local time zone
-                self.time_format = TIME_FORMAT_ISO_LOCAL
-            elif opt in ['-t', '--timeout']:
-                self.timeout_sec = int(arg)
-            if args:
-                self.command = ' '.join(args)
-
-        if self.nsg_config and self.access_token:
-            # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
-            conf = ConfigFactory.parse_file(self.nsg_config)
-            self.access_token = conf.get_string(self.access_token)
-
     def summary(self):
         print()
-        if self.nsg_config and self.access_token:
-            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.access_token))
         print('Base url: {0}'.format(self.base_url))
         print('To exit, enter "quit" or "q" at the prompt')
 
@@ -220,18 +130,3 @@ class NsgQLCommandLine(Cmd):
 
         return nsgcli.api.call(self.base_url, 'POST', path,
                                data=nsgql, token=self.access_token, stream=True, timeout=self.timeout_sec)
-
-
-def main():
-    script = NsgQLCommandLine()
-    script.parse_args(sys.argv[1:])
-    try:
-        if script.command:
-            # print('Command={0}'.format(script.command))
-            script.onecmd(script.command)
-        else:
-            script.summary()
-            script.prompt = script.base_url + ' > '
-            script.cmdloop()
-    except KeyboardInterrupt as e:
-        sys.exit(0)

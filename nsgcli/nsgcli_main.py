@@ -8,10 +8,7 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 
-import getopt
 import json
-from pyhocon import ConfigFactory
-import sys
 
 import api
 import index
@@ -37,41 +34,14 @@ DISCOVERY_ARGS = ['start']
 HUD_ARGS = ['reset']
 NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
-usage_msg = """
-Interactive NetSpyGlass control script. This script can only communicate with 
-NetSpyGlass server running on the same machine.
-
-Usage:
-
-    nsgcli.py --base-url=url [--token=token] [--network=netid] [--region=region] [command]
-    
-    --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
-                 --base-url must be provided.
-    --token:     server API access token (if the server is configured with user authentication)
-    --region:    if present, all commands will be executed on given region. Equivalent to the command 'region' in
-                 the interactive mode.
-
-    all arguments provided on the command line after the last switch are interpreted together as nsgcli command
-"""
-
-
-def usage():
-    print(usage_msg)
-
-
-class InvalidArgsException(Exception):
-    pass
-
 
 class NsgCLI(sub_command.SubCommand, object):
-    def __init__(self):
+    def __init__(self, base_url=None, token=None, netid=1, region=None):
         super(NsgCLI, self).__init__(base_url='', token='', net_id=1)
-        self.base_url = ''
-        self.token = ''
-        self.command = ''
-        self.current_region = None
-        self.nsg_config = ''
-        self.netid = 1
+        self.base_url = base_url
+        self.token = token
+        self.current_region = region
+        self.netid = netid
         self.prompt = ' > '
         # self.prompt = lambda _: self.make_prompt()
 
@@ -82,46 +52,8 @@ class NsgCLI(sub_command.SubCommand, object):
             self.prompt = ' [' + self.current_region + '] > '
         return self.prompt
 
-    def parse_args(self, argv):
-
-        try:
-            opts, args = getopt.getopt(argv,
-                                       'hs:b:t:n:r:C:',
-                                       ['help', 'base-url=', 'token=', 'network=', 'region=', 'config='])
-        except getopt.GetoptError as ex:
-            print('UNKNOWN: Invalid Argument:' + str(ex))
-            raise InvalidArgsException
-
-        for opt, arg in opts:
-            if opt in ['-h', '--help']:
-                usage()
-                sys.exit(3)
-            elif opt in ('-b', '--base-url'):
-                self.base_url = arg.rstrip('/ ')
-            elif opt in ('-a', '--token'):
-                self.token = arg
-            elif opt in ('-n', '--network'):
-                self.netid = arg
-            elif opt in ['-r', '--region']:
-                self.current_region = arg
-            elif opt in ['-C', '--config']:
-                # if path to nsg config file is provided using this parameter, then --token is interpreted as
-                # the path to the configuration parameter in this file
-                self.nsg_config = arg
-            if args:
-                self.command = ' '.join(args)
-
-        if self.nsg_config and self.token:
-            # print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
-            conf = ConfigFactory.parse_file(self.nsg_config)
-            self.token = conf.get_string(self.token)
-
-        self.make_prompt()
-
     def summary(self):
         print()
-        if self.nsg_config and self.token:
-            print('using NSG config {0}, parameter {1}'.format(self.nsg_config, self.token))
         print('Type "help" to get list of commands; "help command" returns more details about selected command.')
         print('Typing "command" with no arguments executes it or enters this commands context.')
         print('"Tab" autocompletes and to exit, enter "quit", "q" or "Ctrl-D" at the prompt.')
@@ -175,7 +107,7 @@ class NsgCLI(sub_command.SubCommand, object):
         return sub_cmd.help()
 
     def complete_search(self, text, _line, _begidx, _endidx):
-        sub_cmd = seach.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
@@ -501,14 +433,3 @@ class NsgCLI(sub_command.SubCommand, object):
                 return json.loads(response.content)
 
 
-def main():
-    script = NsgCLI()
-    script.parse_args(sys.argv[1:])
-    if script.command:
-        script.onecmd(script.command)
-        sys.exit(0)
-    else:
-        script.summary()
-        # script.prompt = ' > '
-        # script.ping()
-        script.cmdloop()

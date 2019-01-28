@@ -1,5 +1,108 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
+import getopt
+import sys
 import nsgcli.nsgql_main
 
-nsgcli.nsgql_main.main()
+TIME_FORMAT_MS = 'ms'
+TIME_FORMAT_ISO_UTC = 'iso_utc'
+TIME_FORMAT_ISO_LOCAL = 'iso_local'
+
+usage_msg = """
+This script executes NsgQL queries provided on command line or interactively
+
+Usage:
+
+    nsgql.py --base-url=url (-n|--network)=netid [(-f|--format)=format] 
+            [-h|--help] [-a|--token=token] [-U|--utc] [-L|--local] [(-t|--timeout)=timeout_sec] [command]
+
+       --base-url:     Base URL for the NetSpyGlass UI backend server. This includes protocol (http/https),
+                       server name or address and port number. Examples: http://localhost:9100 , https://nsg-server:9100
+                       --base-url must be provided.
+       --network:      NetSpyGlass network id (a number, default: 1). 
+       --format:       how to format query result. This can be one of 'list', 'table', 'time_series', 'json'. 
+                       Default is 'table'
+       --raw:          print data as returned by the server. Specifically, do not try to print data returned for
+                       --format=table as an ascii table
+       --command:      execute NsgQL queries provided as argument. Multiple NsgQL queries can be separated by ';'
+       --token:        API access token string
+       --utc:          print values in the column `time` in ISO 8601 format in UTC
+       --local:        print values in the column `time` in ISO 8601 format in local timezone
+       --timeout:      timeout, seconds
+       -h --help:      print this usage summary
+
+    all arguments provided on the command line after the last switch are interpreted together as NsgQL query.
+
+"""
+
+
+def usage():
+    print(usage_msg)
+
+
+class InvalidArgsException(Exception):
+    pass
+
+
+if __name__ == '__main__':
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],
+                                   's:b:n:f:ha:LUt:',
+                                   ['help', 'base-url=', 'network=', 'format=',
+                                    'raw', 'token=', 'local', 'utc', 'timeout='])
+    except getopt.GetoptError as ex:
+        print('UNKNOWN: Invalid Argument:' + str(ex))
+        raise InvalidArgsException
+
+    base_url = ''
+    token = ''
+    netid = 1
+    region = None
+    command = ''
+    output_format = 'table'
+    raw = False
+    time_format = TIME_FORMAT_MS
+    timeout_sec = 180
+
+    for opt, arg in opts:
+        if opt in ['-h', '--help']:
+            usage()
+            sys.exit(3)
+        elif opt in ('-b', '--base-url'):
+            base_url = arg
+        elif opt in ['-n', '--network']:
+            netid = int(arg)
+        elif opt in ['-f', '--format']:
+            output_format = arg
+        elif opt in ['-r', '--raw']:
+            raw = True
+        elif opt in ['-a', '--token', '--access']:
+            token = arg
+        elif opt in ['-U', '--utc']:
+            # prints time in ISO format in UTC
+            time_format = TIME_FORMAT_ISO_UTC
+        elif opt in ['-L', '--local']:
+            # prints time in ISO format in local time zone
+            time_format = TIME_FORMAT_ISO_LOCAL
+        elif opt in ['-t', '--timeout']:
+            timeout_sec = int(arg)
+
+    if args:
+        command = ' '.join(args)
+
+    script = nsgcli.nsgql_main.NsgQLCommandLine(base_url=base_url, token=token, netid=netid,
+                                                output_format=output_format, raw=raw, time_format=time_format,
+                                                timeout_set=timeout_sec)
+    try:
+        if command:
+            # print('Command={0}'.format(script.command))
+            script.onecmd(command)
+        else:
+            script.summary()
+            script.prompt = script.base_url + ' > '
+            script.cmdloop()
+    except KeyboardInterrupt as e:
+        sys.exit(0)

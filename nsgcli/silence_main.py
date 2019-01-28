@@ -10,98 +10,10 @@
 #
 #
 
-import getopt
-import getpass
 import json
-import sys
 import time
 
 import nsgcli.api
-
-usage_msg = """
-This script can add, update and list alert silences
-
-Usage:
-
-    silence <command> --base-url=url [--token=token] (-n|--network)=netid [-h|--help] (--id=NN) \\
-                        --expiration=time (--var_name=name) (--dev_id=id) (--dev_name=name) \\
-                        (--index=idx) (--tags=tags_string) (-reason=reason_text)
-
-       command:        Can be 'add', 'update' or 'list'
-
-       --base-url:     server access URL without the path, for example 'http://nsg.domain.com:9100'
-                       --base-url must be provided.
-       --network:      NetSpyGlass network id (a number, default: 1)
-       --id:           silence id, if known (only for the command 'update')
-       --expiration:   silence expiration time, minutes
-       --key:          alert key to match
-       --var_name:     variable name to match
-       --dev_id:       device Id to match
-       --dev_name:     device name
-       --index:        component index to match
-       --tags:         a string that represents comma-separated list of tags to match. Tag can be defined either
-                       as 'Facet.word' or just 'Facet'. The latter is equivalent to matching 'Facet.*'. Tag
-                       can be prepended with '!' to indicate negation - alert matches if it does not have corresponding
-                       tag.
-       --reason:       argument is a text string that describes the reason this silence is being added
-       -h --help:      print this usage summary
-
-    Variable (--var_name) and device name (--dev_name) match supports regular expressions. The whole string
-    must match regular expression, that is, we use 'match' rather than 'search'
-
-Commands:
-
-    list   lists all active (that is, not expired yet) silences
-    add    add new silence to the system. Parameter --expiration is mandatory and has no default value
-    update this command allows the user to update existing silence. Parameter --id is mandatory, the value appears
-           in the output of the 'list' command
-
-    To delete existing silence that hasn't expired yet set its expiration time to a small but non-zero value,
-    such as 1 min or less. The server expires silences every minute, so this silence will appear in the output
-    of the 'list' command until server expires it.
-
-Examples:
-
-    the following command adds silence for alert 'busyCpuAlert' for device with id 212, any component and any tags:
-        silence.py add --var_name='busyCpuAlert' --dev_id=212
-
-    match alert by name and tag, for example silence all alerts for servers that belong to hbase cluster 'hbase0'
-    except those marked 'important':
-        silence.py add --var_name='busyCpuAlert' --tags='Explicit.hbase0, !Explicit.important'
-
-    use this command to list active silences:
-        silence.py list
-
-    The output looks like this:
-         id  | exp.time, min  |         created          |         updated          |                  match
-        ------------------------------------------------------------------------------------------------------------------------
-         8   |      60.0      | Mon Jun  8 19:50:15 2015 | Mon Jun  8 19:50:15 2015 | {u'varName': u'busyCpuAlert', u'tags': [], u'deviceId': 131, u'index': 0}
-
-    use this command to update expiration time on the existing silence (use silence Id returned by the 'list' command):
-        silence.py update --id=8 --expiration=120
-
-    use the following command to add silence that matches all alerts regardgess of their name, device,
-    component and tags (a 'catch all' silence):
-        silence.py add --var_name='.*'
-
-    use the following command to add silence that matches all alerts for given device
-        silence.py add --var_name='.*' --dev_id=212
-
-    the following command adds silence that matches variable 'busyCpyAlert' for all devices with names that
-    match regular expression 'sjc1-rtr-.*'
-        silence.py add --var_name='busyCpuAlert' --dev_name='sjc1-rtr-.*'
-
-    override server address and port number settings
-        silence.py list --server=10.1.1.1 --port=9101
-"""
-
-
-def usage():
-    print(usage_msg)
-
-
-class InvalidArgsException(Exception):
-    pass
 
 
 class Silence:
@@ -173,80 +85,22 @@ class Silence:
 
 
 class NetSpyGlassAlertSilenceControl:
-    def __init__(self):
-        self.command = ''
-        self.base_url = ''
-        self.token = ''
-        self.netid = 1
-        self.silence_id = 0
-        self.expiration = 0
-        self.user = ''
-        self.reason = ''
-        self.key = ''
-        self.var_name = ''
-        self.dev_id = 0
-        self.dev_name = ''
-        self.index = 0
-        self.tags = ''
+    def __init__(self, base_url='', token='', netid=1, silence_id=0, expiration=0, user='', reason='',
+                 key='', var_name='', dev_id=0, dev_name='', index=0, tags=''):
+        self.base_url = base_url
+        self.token = token
+        self.netid = netid
+        self.silence_id = silence_id
+        self.expiration = expiration
+        self.user = user
+        self.reason = reason
+        self.key = key
+        self.var_name = var_name
+        self.dev_id = dev_id
+        self.dev_name = dev_name
+        self.index = index
+        self.tags = tags
         self.silence_print_format = '{0:^4} | {1:^14} | {2:^24} | {3:^24} | {4:^8} | {5:^40} | {6:^40}'
-
-    def parse_args(self, argv):
-
-        if not argv:
-            print('Invalid command: %s ' % self.command)
-            raise InvalidArgsException
-
-        self.command = argv[0]
-        argv = argv[1:]
-
-        if self.command not in ['add', 'update', 'list']:
-            print('Invalid command: %s ' % self.command)
-            raise InvalidArgsException
-
-        try:
-            opts, args = getopt.getopt(argv,
-                                       's:p:n:h',
-                                       ['base-url=', 'token=', 'network=', 'id=', 'expiration=',
-                                        'key=', 'var_name=', 'dev_id=', 'dev_name=', 'index=',
-                                        'tags=', 'reason='])
-        except getopt.GetoptError as ex:
-            print('UNKNOWN: Invalid Argument:' + str(ex))
-            raise InvalidArgsException
-
-        for opt, arg in opts:
-            if opt in ['-h', '--help']:
-                usage()
-                sys.exit(3)
-            elif opt in ('-b', '--base-url'):
-                self.base_url = arg.rstrip('/ ')
-            elif opt in ('-a', '--token'):
-                self.token = arg
-            elif opt in ['-n', '--network']:
-                self.netid = int(arg)
-            elif opt in ['--id']:
-                self.silence_id = int(arg)
-            elif opt in ['--expiration']:
-                self.expiration = float(arg)
-            elif opt in ['--key']:
-                self.key = arg
-            elif opt in ['--var_name']:
-                self.var_name = arg
-            elif opt in ['--dev_id']:
-                self.dev_id = arg
-            elif opt in ['--dev_name']:
-                self.dev_name = arg
-            elif opt in ['--index']:
-                self.index = arg
-            elif opt in ['--tags']:
-                self.tags = arg
-            elif opt in ['--reason']:
-                self.reason = arg
-
-        self.user = getpass.getuser()
-
-        if self.command in ['add'] and self.expiration == 0:
-            print('Invalid or undefined expiration time: {0}'.format(self.expiration))
-            raise InvalidArgsException
 
     def assemble_silence_data(self):
         """
@@ -371,20 +225,12 @@ class NetSpyGlassAlertSilenceControl:
         else:
             print(res)
 
-    def run(self):
-        if self.command in ['add']:
+    def run(self, command):
+        if command in ['add']:
             self.add()
-        elif self.command in ['update']:
+        elif command in ['update']:
             self.update()
-        elif self.command in ['list']:
+        elif command in ['list']:
             self.list()
-
-
-def main():
-    script = NetSpyGlassAlertSilenceControl()
-    try:
-        script.parse_args(sys.argv[1:])
-        script.run()
-    except InvalidArgsException as e:
-        usage()
-        sys.exit(3)
+        else:
+            print('Unknown command "{0}"'.format(command))
