@@ -249,22 +249,27 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                      }
             resp = json.loads(response.content)
             column_width = {}  # type: Dict[Any, Any]
-            for idx in resp:
-                converted = self.convert_obj(idx, ordered_columns)
+            for column_name in title.keys():
+                self.update_column_width(title, column_name, column_width)
+            for row in resp:
+                converted = self.convert_obj(row, ordered_columns)
                 for column_name in ordered_columns:
                     self.update_column_width(converted, column_name, column_width)
-                    self.update_column_width(title, column_name, column_width)
             # assemble format string
             table_columns = []
             for column_name in ordered_columns:
                 table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
-            format_str = ' | '.join(table_columns)
+            format_str = u' | '.join(table_columns)
             title_line = format_str.format(title)
             print(title_line)
             print('-' * len(title_line))
-            for idx in resp:
-                converted = self.convert_obj(idx, ordered_columns)
+            counter = 0
+            for row in resp:
+                converted = self.convert_obj(row, ordered_columns)
                 print(format_str.format(converted))
+                counter += 1
+            print('-' * len(title_line))
+            print('Total: {}'.format(counter))
 
     def convert_obj(self, obj, columns):
         new_obj = obj.copy()
@@ -287,7 +292,8 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
 
     def update_column_width(self, obj, column_name, col_wid_dict):
         w = col_wid_dict.get(column_name, 0)
-        w = max(w, len(str(obj.get(column_name, ''))))
+        txt = unicode(obj.get(column_name, ''))
+        w = max(w, len(txt))
         col_wid_dict[column_name] = w
 
     def parse_index_key(self, index_key):
