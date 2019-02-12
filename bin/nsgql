@@ -5,10 +5,8 @@ from __future__ import print_function
 import getopt
 import sys
 import nsgcli.nsgql_main
+import nsgcli.response_formatter
 
-TIME_FORMAT_MS = 'ms'
-TIME_FORMAT_ISO_UTC = 'iso_utc'
-TIME_FORMAT_ISO_LOCAL = 'iso_local'
 
 usage_msg = """
 This script executes NsgQL queries provided on command line or interactively
@@ -29,7 +27,7 @@ Usage:
        --command:      execute NsgQL queries provided as argument. Multiple NsgQL queries can be separated by ';'
        --token:        API access token string
        --utc:          print values in the column `time` in ISO 8601 format in UTC
-       --local:        print values in the column `time` in ISO 8601 format in local timezone
+       --local:        print values in the column `time` in ISO 8601 format in local timezone (default)
        --timeout:      timeout, seconds
        -h --help:      print this usage summary
 
@@ -64,7 +62,7 @@ if __name__ == '__main__':
     command = ''
     output_format = 'table'
     raw = False
-    time_format = TIME_FORMAT_MS
+    time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
     timeout_sec = 180
 
     for opt, arg in opts:
@@ -83,10 +81,10 @@ if __name__ == '__main__':
             token = arg
         elif opt in ['-U', '--utc']:
             # prints time in ISO format in UTC
-            time_format = TIME_FORMAT_ISO_UTC
+            time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_UTC
         elif opt in ['-L', '--local']:
             # prints time in ISO format in local time zone
-            time_format = TIME_FORMAT_ISO_LOCAL
+            time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
         elif opt in ['-t', '--timeout']:
             timeout_sec = int(arg)
 

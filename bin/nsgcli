@@ -5,6 +5,7 @@ from __future__ import print_function
 import getopt
 import sys
 import nsgcli.nsgcli_main
+import nsgcli.response_formatter
 
 
 usage_msg = """
@@ -13,13 +14,15 @@ NetSpyGlass server running on the same machine.
 
 Usage:
 
-    nsgcli.py --base-url=url [--token=token] [--network=netid] [--region=region] [command]
+    nsgcli.py --base-url=url [--token=token] [--network=netid] [--region=region] [-U|--utc] [-L|--local] [command]
     
     --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
                  --base-url must be provided.
     --token:     server API access token (if the server is configured with user authentication)
     --region:    if present, all commands will be executed on given region. Equivalent to the command 'region' in
                  the interactive mode.
+    --utc:       print values in the column `time` in ISO 8601 format in UTC
+    --local:     print values in the column `time` in ISO 8601 format in local timezone (default)
 
     all arguments provided on the command line after the last switch are interpreted together as nsgcli command
 """
@@ -37,8 +40,8 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   'hs:b:t:n:r:',
-                                   ['help', 'base-url=', 'token=', 'network=', 'region='])
+                                   'hs:b:t:n:r:LU',
+                                   ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region='])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
         raise InvalidArgsException
@@ -48,6 +51,7 @@ if __name__ == '__main__':
     netid = 1
     region = None
     command = ''
+    time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -61,11 +65,17 @@ if __name__ == '__main__':
             netid = arg
         elif opt in ['-r', '--region']:
             region = arg
+        elif opt in ['-U', '--utc']:
+            # prints time in ISO format in UTC
+            time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_UTC
+        elif opt in ['-L', '--local']:
+            # prints time in ISO format in local time zone
+            time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
 
     if args:
         command = ' '.join(args)
 
-    script = nsgcli.nsgcli_main.NsgCLI(base_url=base_url, token=token, netid=netid, region=region)
+    script = nsgcli.nsgcli_main.NsgCLI(base_url=base_url, token=token, netid=netid, region=region, time_format=time_format)
     script.make_prompt()
 
     if command:

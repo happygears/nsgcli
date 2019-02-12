@@ -18,14 +18,16 @@ from typing import Dict, Any
 import nsgcli.api
 import nsgcli.sub_command
 import nsgcli.system
+import nsgcli.response_formatter
 
 
 class ShowCommands(nsgcli.sub_command.SubCommand, object):
     # prompt = "show # "
 
-    def __init__(self, base_url, token, net_id, region=None):
+    def __init__(self, base_url, token, net_id, time_format=nsgcli.response_formatter.TIME_FORMAT_MS, region=None):
         super(ShowCommands, self).__init__(base_url, token, net_id)
-        self.system_commands = nsgcli.system.SystemCommands(self.base_url, self.token, self.netid, region=region)
+        self.system_commands = nsgcli.system.SystemCommands(
+            self.base_url, self.token, self.netid, time_format=time_format, region=region)
         self.current_region = region
         if region is None:
             self.prompt = 'show # '

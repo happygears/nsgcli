@@ -20,6 +20,10 @@ import exec_commands
 import sub_command
 
 
+TIME_FORMAT_MS = 'ms'
+TIME_FORMAT_ISO_UTC = 'iso_utc'
+TIME_FORMAT_ISO_LOCAL = 'iso_local'
+
 # SHOW_ARGS = ['version', 'uuid']
 CACHE_ARGS = ['clear', 'refresh']
 MAKE_ARGS = ['views', 'variables', 'maps', 'tags']
@@ -36,10 +40,11 @@ NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic sche
 
 
 class NsgCLI(sub_command.SubCommand, object):
-    def __init__(self, base_url=None, token=None, netid=1, region=None):
+    def __init__(self, base_url=None, token=None, netid=1, region=None, time_format=TIME_FORMAT_MS):
         super(NsgCLI, self).__init__(base_url='', token='', net_id=1)
         self.base_url = base_url
         self.token = token
+        self.time_format = time_format
         self.current_region = region
         self.netid = netid
         self.prompt = ' > '
@@ -80,18 +85,18 @@ class NsgCLI(sub_command.SubCommand, object):
 
     ##########################################################################################
     def do_show(self, arg):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_show(self):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
         return sub_cmd.help()
 
     def complete_show(self, text, _line, _begidx, _endidx):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
