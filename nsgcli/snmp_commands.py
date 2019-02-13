@@ -14,8 +14,6 @@ import types
 import api
 import sub_command
 import system
-import response_formatter
-
 
 SNMP_RESPONSE_FORMAT = """
 Source:   {m[agent]} ({m[agentAddress]})
@@ -29,8 +27,8 @@ SNMP_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&oid={3}
 class SnmpCommands(sub_command.SubCommand, object):
     # prompt = "exec # "
 
-    def __init__(self, base_url, token, net_id, time_format=response_formatter.TIME_FORMAT_MS, region=None):
-        super(SnmpCommands, self).__init__(base_url, token, net_id, time_format=time_format, region=region)
+    def __init__(self, base_url, token, net_id, region=None):
+        super(SnmpCommands, self).__init__(base_url, token, net_id, region=region)
         self.current_region = region
         self.system_commands = system.SystemCommands(self.base_url, self.token, self.netid, region=region)
         if region is None:
