@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import getopt
 import getpass
+import os
 import sys
 import nsgcli.silence_main
 
@@ -119,8 +120,8 @@ if __name__ == '__main__':
         print('UNKNOWN: Invalid Argument:' + str(ex))
         sys.exit(3)
 
-    base_url = ''
-    token = ''
+    base_url = os.getenv('NSG_SERVICE_URL')
+    token = os.getenv('NSG_API_TOKEN')
     netid = 1
     silence_id = 0
     expiration = 0
@@ -163,6 +164,13 @@ if __name__ == '__main__':
             reason = arg
 
     user = getpass.getuser()
+
+    if not base_url:
+        print('--base-url parameter is mandatory')
+        sys.exit(3)
+
+    if token is None:
+        token = ''
 
     if command in ['add'] and expiration == 0:
         print('Invalid or undefined expiration time: {0}'.format(expiration))

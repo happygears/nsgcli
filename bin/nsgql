@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import getopt
+import os
 import sys
 import nsgcli.nsgql_main
 import nsgcli.response_formatter
@@ -55,8 +56,8 @@ if __name__ == '__main__':
         print('UNKNOWN: Invalid Argument:' + str(ex))
         raise InvalidArgsException
 
-    base_url = ''
-    token = ''
+    base_url = os.getenv('NSG_SERVICE_URL')
+    token = os.getenv('NSG_API_TOKEN')
     netid = 1
     region = None
     command = ''
@@ -90,6 +91,13 @@ if __name__ == '__main__':
 
     if args:
         command = ' '.join(args)
+
+    if not base_url:
+        print('--base-url parameter is mandatory')
+        raise InvalidArgsException
+
+    if token is None:
+        token = ''
 
     script = nsgcli.nsgql_main.NsgQLCommandLine(base_url=base_url, token=token, netid=netid,
                                                 output_format=output_format, raw=raw, time_format=time_format,
