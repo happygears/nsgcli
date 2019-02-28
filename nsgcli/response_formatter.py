@@ -108,6 +108,9 @@ class ResponseFormatter(object):
             return column
 
     def transform_value(self, field_name, value):
+        if value == '*':
+            return value
+
         if field_name in ['systemUptime', 'processUptime']:
             td = datetime.timedelta(0, float(value))
             return str(td)
@@ -126,9 +129,9 @@ class ResponseFormatter(object):
         #     return value + ' %'
 
         if field_name in MEMORY_VALUE_FIELDS and value and isinstance(value, numbers.Number):
-            return sizeof_fmt(float(value))
+            return sizeof_fmt(value)
 
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
-            return percentage_fmt(float(value))
+            return percentage_fmt(value)
         return value
 
