@@ -46,6 +46,8 @@ class ResponseFormatter(object):
         self.time_format = time_format
 
     def print_result_as_table(self, resp):
+        if not 'columns' in resp:
+            return '[]'
         columns = []  # e.g.:   [{u'text': u'device'}]
         for col in resp.get('columns'):
             columns.append(col['text'])

@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(name='nsgcli',
-                 version='1.0.31',
+                 version='1.0.32',
                  description='NetSpyGlass CLI',
                  long_description=long_description,
                  long_description_content_type="text/markdown",
