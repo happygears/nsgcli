@@ -167,14 +167,22 @@ class SystemCommands(sub_command.SubCommand, object):
         print('Show various system parameters and state variables. Arguments: {0}'.format(self.get_args()))
 
     def do_filesystem(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,component,NsgRegion,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace '
-            'WHERE fsUtil NOT NULL AND fsFreeSpace NOT NULL AND fsTotalSpace NOT NULL ORDER BY device')
+        status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
+            self.print_cluster_vars(
+                ['name', 'fsFreeSpace', 'fsTotalSpace', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
+                response)
+
+        # status, response = self.nsgql_call(
+        #     'SELECT device as server,component,NsgRegion,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace '
+        #     'WHERE fsUtil NOT NULL AND fsFreeSpace NOT NULL AND fsTotalSpace NOT NULL ORDER BY device')
+        # if status != 200 or self.is_error(response):
+        #     print('ERROR: {0}'.format(self.get_error(response)))
+        # else:
+        #     response = response[0]
+        #     self.table_formatter.print_result_as_table(response)
 
     def do_memory(self, arg):
         status, response = self.nsgql_call(
@@ -187,13 +195,20 @@ class SystemCommands(sub_command.SubCommand, object):
             self.table_formatter.print_result_as_table(response)
 
     def do_cpu(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,component,NsgRegion,cpuUsage FROM cpuUsage WHERE cpuUsage NOT NULL ORDER BY device')
+        status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
+            self.print_cluster_vars(
+                ['name', 'cpuUsage', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
+                response)
+        # status, response = self.nsgql_call(
+        #     'SELECT device as server,component,NsgRegion,cpuUsage FROM cpuUsage WHERE cpuUsage NOT NULL ORDER BY device')
+        # if status != 200 or self.is_error(response):
+        #     print('ERROR: {0}'.format(self.get_error(response)))
+        # else:
+        #     response = response[0]
+        #     self.table_formatter.print_result_as_table(response)
 
     def do_tsdb(self, arg):
         status, response = self.nsgql_call(

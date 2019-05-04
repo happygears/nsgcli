@@ -130,8 +130,8 @@ class ResponseFormatter(object):
         # if field_name == 'cpuUsage':
         #     return value + ' %'
 
-        if field_name in MEMORY_VALUE_FIELDS and value and isinstance(value, numbers.Number):
-            return sizeof_fmt(value)
+        if field_name in MEMORY_VALUE_FIELDS and value:  # and isinstance(value, numbers.Number):
+            return sizeof_fmt(float(value))
 
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
             return percentage_fmt(value)
