@@ -24,7 +24,8 @@ ROLE_MAP = {
     'aggregator': 'agg',
     'agent': 'agent',
     'emulator': 'emu',
-    'indexer': 'idx'
+    'indexer': 'idx',
+    'discovery': 'disc'
 }
 
 
@@ -315,18 +316,18 @@ class SystemCommands(sub_command.SubCommand, object):
             self.print_cluster_status(response)
 
     def print_cluster_status(self, status_json):
-        print()
-        print('Server name:          {0}'.format(status_json['name']))
-        print('Region:               {0}'.format(status_json['region']))
-        print('Roles:                {0}'.format(','.join(status_json['roles'])))
-        print('Status:               {0}'.format(status_json['serverStatus']))
-        print('zookeeperClientState: {0}'.format(status_json['zookeeperClientState']))
-        print()
-        print('Cluster members:')
+        # print()
+        # print('Server name:          {0}'.format(status_json['name']))
+        # print('Region:               {0}'.format(status_json['region']))
+        # print('Roles:                {0}'.format(','.join(status_json['roles'])))
+        # print('Status:               {0}'.format(status_json['serverStatus']))
+        # print('zookeeperClientState: {0}'.format(status_json['zookeeperClientState']))
+        # print()
+        # print('Cluster members:')
 
         self.print_cluster_vars(
             ['name', 'hostName', 'hostAddress', 'pid', 'id', 'role', 'region', 'tier',
-             'url', 'status', 'processUptime', 'updatedAt'],
+             'status', 'processUptime', 'updatedAt'],
             status_json)
 
     def print_cluster_vars(self, names, status_json):
