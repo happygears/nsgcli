@@ -194,13 +194,17 @@ class SubCommand(cmd.Cmd, object):
             print(acr)
 
     def parse_status(self, acr):
-        ec = acr['exitStatus']
-        if ec == 0:
-            status = 'ok'
-        elif 'error' in acr:
-            status = acr['error']
-        elif ec == -1:
-            status = 'could not find and execute the command'
-        else:
-            status = 'unknown error'
-        return status
+        try:
+            ec = acr['exitStatus']
+            if ec == 0:
+                status = 'ok'
+            elif 'error' in acr:
+                status = acr['error']
+            elif ec == -1:
+                status = 'could not find and execute the command'
+            else:
+                status = 'unknown error'
+            return status
+        except Exception as e:
+            print('Can not parse status in "{0}"'.format(acr))
+            return 'unknown'
