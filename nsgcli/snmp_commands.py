@@ -60,6 +60,8 @@ class SnmpCommands(sub_command.SubCommand, object):
         print('')
         print('  Command "walk" supports only single OID argument')
         print('')
+        print('  NOTE: this command is deprecated in favor of `agent <agent_name> snmpget|snmpwalk`')
+        print('')
 
     def do_get(self, args):
         """

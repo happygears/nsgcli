@@ -16,6 +16,7 @@ import show
 import search
 import agent_commands
 import exec_commands
+import snmp_commands
 import sub_command
 
 
@@ -398,6 +399,26 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_exec(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, EXEC_ARGS)
+
+    ##########################################################################################
+    def do_snmp(self, arg):
+        """
+        snmp walk .1
+
+        @param arg:   words after 'exec' as one string
+        """
+        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        if not arg:
+            sub_cmd.cmdloop()
+        else:
+            sub_cmd.onecmd(arg)
+
+    def help_snmp(self):
+        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd.help()
+
+    def complete_snmp(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, SNMP_ARGS)
 
     def basic_command(self, request, data=None):
         """
