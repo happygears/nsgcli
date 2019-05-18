@@ -1,10 +1,11 @@
 import setuptools
+from nsgcli.version import __version__
 
-with open("README.md", "r") as fh:
+with open('README.md', 'r') as fh:
     long_description = fh.read()
 
 setuptools.setup(name='nsgcli',
-                 version='1.0.37',
+                 version=__version__,
                  description='NetSpyGlass CLI',
                  long_description=long_description,
                  long_description_content_type="text/markdown",

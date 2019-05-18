@@ -7,6 +7,7 @@ import os
 import sys
 import nsgcli.nsgql_main
 import nsgcli.response_formatter
+from nsgcli.version import __version__
 
 
 usage_msg = """
@@ -31,6 +32,7 @@ Usage:
        --local:        print values in the column `time` in ISO 8601 format in local timezone (default)
        --timeout:      timeout, seconds
        -h --help:      print this usage summary
+       -v, --version:  print version and exit
 
     all arguments provided on the command line after the last switch are interpreted together as NsgQL query.
 
@@ -49,9 +51,9 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   's:b:n:f:ha:LUt:',
+                                   's:b:n:f:ha:LUt:v',
                                    ['help', 'base-url=', 'network=', 'format=',
-                                    'raw', 'token=', 'local', 'utc', 'timeout='])
+                                    'raw', 'token=', 'local', 'utc', 'timeout=', 'version'])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
         raise InvalidArgsException
@@ -88,6 +90,9 @@ if __name__ == '__main__':
             time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
         elif opt in ['-t', '--timeout']:
             timeout_sec = int(arg)
+        elif opt in ['-v', '--version']:
+            print(__version__)
+            sys.exit(0)
 
     if args:
         command = ' '.join(args)

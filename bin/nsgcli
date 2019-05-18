@@ -7,6 +7,7 @@ import os
 import sys
 import nsgcli.nsgcli_main
 import nsgcli.response_formatter
+from nsgcli.version import __version__
 
 
 usage_msg = """
@@ -24,6 +25,7 @@ Usage:
                  the interactive mode.
     --utc:       print values in the column `time` in ISO 8601 format in UTC
     --local:     print values in the column `time` in ISO 8601 format in local timezone (default)
+    -v, --version:   print version and exit
 
     all arguments provided on the command line after the last switch are interpreted together as nsgcli command
 """
@@ -41,8 +43,8 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   'hs:b:t:n:r:LU',
-                                   ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region='])
+                                   'hs:b:t:n:r:LUv',
+                                   ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region=', 'version'])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
         raise InvalidArgsException
@@ -72,6 +74,9 @@ if __name__ == '__main__':
         elif opt in ['-L', '--local']:
             # prints time in ISO format in local time zone
             time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
+        elif opt in ['-v', '--version']:
+            print(__version__)
+            sys.exit(0)
 
     if args:
         command = ' '.join(args)
