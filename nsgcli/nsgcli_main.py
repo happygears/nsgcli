@@ -264,25 +264,40 @@ class NsgCLI(sub_command.SubCommand, object):
         is erased after timeout. The default timeout is 10 min. If timeout=0, then debug
         level is set indefinitely. Argument can not contain spaces.
 
-        Special debug levels (enter the number as argument 'level', values can be combined with bitwise OR):
+        Recognized debug levels: (enter the number as argument 'level', values can be combined with bitwise OR):
 
-        DEBUG_NSGQL                     2
-        DEBUG_DATA_POOL                 4
-        DEBUG_AGENT_RESPONSES           8
-        DEBUG_COMPUTE                  16
-        DEBUG_TSDB                     32
-        DEBUG_STATUS                   64
-        DEBUG_ZOOKEEPER               128
-        DEBUG_CACHES                  256
-        DEBUG_SOCKET_IO               512
-        DEBUG_GRAPH                  1024
-        DEBUG_VARS                   2048
-        DEBUG_DATA_PUSH              4096
-        DEBUG_SYSTEM_EVENTS_AND_HUD  8192
-        DEBUG_INDEXER               16384
-        DEBUG_MVARS                 32768
-        DEBUG_REDIS_EXECUTOR        65536
-
+        DEBUG_NSGQL = 1
+        DEBUG_DATA_POOL = 2
+        DEBUG_AGENT_RESPONSES = 3
+        DEBUG_COMPUTE = 4
+        DEBUG_TSDB = 5
+        DEBUG_STATUS = 6
+        DEBUG_ZOOKEEPER = 7
+        DEBUG_CACHES = 8
+        DEBUG_SOCKET_IO = 9
+        DEBUG_GRAPH = 10
+        DEBUG_VARS = 11
+        DEBUG_DATA_PUSH = 12
+        DEBUG_SYSTEM_EVENTS_AND_HUD = 13
+        DEBUG_INDEXER = 14
+        DEBUG_MVARS = 15
+        DEBUG_REDIS_EXECUTOR = 16
+        DEBUG_AGENT_RESPONSE_CYCLE = 17
+        DEBUG_DEVICES = 18
+        DEBUG_DISCOVERY = 19
+        DEBUG_AGENT_COMMAND_EXECUTION = 20
+        DEBUG_STATE_MANAGER = 21
+        DEBUG_TAGS = 22
+        DEBUG_ALERTS = 23
+        DEBUG_REPORTS = 24
+        DEBUG_CLUSTERS = 25
+        DEBUG_SERVER_LIFE_CYCLE = 26
+        DEBUG_SELF_MONITORING = 27
+        DEBUG_AGGREGATION = 28
+        DEBUG_THRESHOLDS = 29
+        DEBUG_WEB_SERVER_SESSIONS = 30
+        DEBUG_WEBDAV = 31
+        DEBUG_VIEWS = 32
         """
         if not arg:
             print('Invalid argument "{0}"; see "help debug"'.format(arg))
