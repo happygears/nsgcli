@@ -18,7 +18,7 @@ import sub_command
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})
 Status: {m[status]}
-Output: 
+Output:
 {m[output]}"""
 
 CMD_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
@@ -28,50 +28,57 @@ SNMP_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}
 AGENT_LOG_DIR = '/opt/nsg-agent/var/logs'
 HELP = """
 Call agents to execute various commands.
-        
+
 log:    retrieve agent's log file
         this command assumes standard directory structure on the agent where logs are
         located in /opt/nsg-agent/var/logs
 
-        Example: 
-        
+        Example:
+
             agent <agent_name> log [-NN] <log_file_name>
 
 
 tail: tail a file on an agent.
 
-        Example: 
-        
+        Example:
+
             agent <agent_name> tail -100 /opt/nsg-agent/home/logs/agent.log
 
 
 probe_snmp: discover working snmp configuration for the device
 
-        Example: 
-        
+        Example:
+
             agent <agent_name> probe_snmp <device_address> <snmp_conf_name_1> <snmp_conf_name_2> ...
 
 
 find: Find an agent responsible for polling given target (IP address). Use 'all' in place of the agent name.
 
-        Example: 
-        
+        Example:
+
             agent all find 1.2.3.4
 
 restart: restart the agent
 
         Example: agent <agent_name> restart
-        
-snmp:    run snmp get or snmp walk command 
 
-        Argumnents:  
+snmp:    run snmp get or snmp walk command
+
+        Arguments:
 
             agent <agent_name> snmpget <address> oid
             agent <agent_name> snmpwalk <address> oid
 
-        Example: 
+        Example:
 
             agent <agent_name> snmpget  10.0.0.1 .1.3.6.1.2.1.1.2.0
+
+set_property:    set (or query) value of JVM system property
+
+        Arguments:
+
+            agent <agent_name> set_property foo
+            agent <agent_name> set_property foo bar
 
 """
 
@@ -230,6 +237,17 @@ class AgentCommands(sub_command.SubCommand, object):
         """
         cmd_args = self.make_args(args)
         self.snmp_command('snmpwalk', cmd_args)
+
+    def do_set_property(self, args):
+        """
+        Contacts given agent (or all), and sets the system property key to value.
+        (If value is omitted, the current value of the property is returned.)
+
+        agent <agent_name> set_property key [value]
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('set_property', cmd_args)
+
 
     def snmp_command(self, command, arg):
         """
