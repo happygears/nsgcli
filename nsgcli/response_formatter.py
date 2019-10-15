@@ -62,7 +62,7 @@ class ResponseFormatter(object):
             el_count = 0
             for element in row:
                 element = self.transform_value(columns[el_count], element)
-                element = str(element).rstrip()
+                # element = str(element).rstrip()
                 w = widths.get(el_count, 0)
                 if len(element) > w:
                     widths[el_count] = len(element)
@@ -135,5 +135,6 @@ class ResponseFormatter(object):
 
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
             return percentage_fmt(value)
-        return value
+
+        return value.encode("utf-8").rstrip()
 
