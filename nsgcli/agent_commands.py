@@ -80,6 +80,12 @@ set_property:    set (or query) value of JVM system property
             agent <agent_name> set_property foo
             agent <agent_name> set_property foo bar
 
+measurements:    query current values of agent monitoring variables
+
+        Example:
+
+            agent <agent_name> measurements
+
 """
 
 
@@ -248,6 +254,25 @@ class AgentCommands(sub_command.SubCommand, object):
         cmd_args = self.make_args(args)
         self.common_command('set_property', cmd_args)
 
+    def do_measurements(self, args):
+        """
+        Contacts agent (or all), and retrieves current values of its monitoring
+        variables.
+
+        agent <agent_name> measurements
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('measurements', cmd_args)
+
+    def do_bulk_request(self, args):
+        """
+        Contacts agent (or all), and retrieves current bulk request
+        for given device ID.
+
+        agent <agent_name> bulk_request <device_ID>
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('bulk_request', cmd_args)
 
     def snmp_command(self, command, arg):
         """
