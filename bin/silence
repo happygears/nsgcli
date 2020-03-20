@@ -2,10 +2,14 @@
 
 from __future__ import print_function
 
+import datetime
+import dateutil.parser
 import getopt
 import getpass
 import os
+import pytz
 import sys
+import time
 import nsgcli.silence_main
 
 
@@ -15,7 +19,7 @@ This script can add, update and list alert silences
 Usage:
 
     silence <command> --base-url=url [--token=token] (-n|--network)=netid [-h|--help] (--id=NN) \\
-                        --expiration=time (--var_name=name) (--dev_id=id) (--dev_name=name) \\
+                        --start=TIME --expiration=time (--var_name=name) (--dev_id=id) (--dev_name=name) \\
                         (--index=idx) (--tags=tags_string) (-reason=reason_text)
 
        command:        Can be 'add', 'update' or 'list'
@@ -24,7 +28,14 @@ Usage:
                        --base-url must be provided.
        --network:      NetSpyGlass network id (a number, default: 1)
        --id:           silence id, if known (only for the command 'update')
-       --expiration:   silence expiration time, minutes
+       --start:        silence should start on this date and time. Various input formats are supported,
+                       examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with 
+                       time zone). See Python module `dateutil` for the detailed list of supported formats. 
+                       You can set the time zone, but if it is not specified, the time is assumed to be in local 
+                       time zone. If this parameter is not provided, the start time of the silence is "now". If 
+                       specified, the start time can be both in the future and in the past.
+       --expiration:   silence expiration time, minutes. The silence stops at the time calculated as
+                       the start time plus expiration time. 
        --key:          alert key to match
        --var_name:     variable name to match
        --dev_id:       device Id to match
@@ -42,10 +53,12 @@ Usage:
 
 Commands:
 
-    list   lists all active (that is, not expired yet) silences
+    list   lists all silences that have started but not expired yet, and those with start time
+           in the future. All time columns are presented in local time zone.
     add    add new silence to the system. Parameter --expiration is mandatory and has no default value
     update this command allows the user to update existing silence. Parameter --id is mandatory, the value appears
-           in the output of the 'list' command
+           in the output of the 'list' command. You can change any parameter of the silence, including
+           its start time and expiration.
 
     To delete existing silence that hasn't expired yet set its expiration time to a small but non-zero value,
     such as 1 min or less. The server expires silences every minute, so this silence will appear in the output
@@ -77,6 +90,9 @@ Examples:
 
     use the following command to add silence that matches all alerts for given device
         silence.py add --var_name='.*' --dev_id=212
+
+    specify start time with time zone:
+        silence.py add --start='2020-04-01 00:00:00 -0800' --var_name='.*' --dev_id=212
 
     the following command adds silence that matches variable 'busyCpyAlert' for all devices with names that
     match regular expression 'sjc1-rtr-.*'
@@ -115,7 +131,7 @@ if __name__ == '__main__':
                                    's:p:n:h',
                                    ['help', 'base-url=', 'token=', 'network=', 'id=', 'expiration=',
                                     'key=', 'var_name=', 'dev_id=', 'dev_name=', 'index=',
-                                    'tags=', 'reason='])
+                                    'tags=', 'reason=', 'start='])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
         sys.exit(3)
@@ -133,6 +149,10 @@ if __name__ == '__main__':
     dev_name = ''
     index = 0
     tags = ''
+    start_time = 0
+
+    epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
+    default_tz = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzlocal())
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -148,6 +168,9 @@ if __name__ == '__main__':
             silence_id = int(arg)
         elif opt in ['--expiration']:
             expiration = float(arg)
+        elif opt in ['--start']:
+            # use of the `default` arg allows me to declare default timezone but not enforce it
+            start_time = (dateutil.parser.parse(arg, default=default_tz) - epoch).total_seconds()
         elif opt in ['--key']:
             key = arg
         elif opt in ['--var_name']:
@@ -165,6 +188,9 @@ if __name__ == '__main__':
 
     user = getpass.getuser()
 
+    if start_time == 0:
+        start_time = time.time()
+
     if not base_url:
         print('--base-url parameter is mandatory')
         sys.exit(3)
@@ -180,5 +206,5 @@ if __name__ == '__main__':
                                                                 silence_id=silence_id, expiration=expiration,
                                                                 user=user, reason=reason, key=key, var_name=var_name,
                                                                 dev_id=dev_id, dev_name=dev_name,
-                                                                index=index, tags=tags)
+                                                                index=index, tags=tags, start_time=start_time)
     script.run(command)
