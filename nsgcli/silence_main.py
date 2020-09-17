@@ -12,6 +12,7 @@
 
 import email, json, nsgcli.api
 
+
 class Silence:
 
     def __init__(self, dd):
@@ -130,7 +131,8 @@ class NetSpyGlassAlertSilenceControl:
         return silence
 
     def print_silence_header(self):
-        print(self.silence_print_format.format('id', 'start', 'exp.time, min', 'user', 'reason', 'created', 'updated', 'match'))
+        print(self.silence_print_format.format('id', 'start', 'exp.time, min', 'user', 'reason', 'created', 'updated',
+                                               'match'))
         print('{0:-<200}'.format('-'))
 
     def print_silence(self, silence):
@@ -141,7 +143,8 @@ class NetSpyGlassAlertSilenceControl:
         created_at = email.utils.formatdate(silence.created_at / 1000, localtime=True)
         updated_at = email.utils.formatdate(silence.updated_at / 1000, localtime=True)
         match = silence_dict.get('match', '{}')
-        print(self.silence_print_format.format(id, start_time, exp_min, silence.user, silence.reason, created_at, updated_at, match))
+        print(self.silence_print_format.format(id, start_time, exp_min, silence.user, silence.reason, created_at,
+                                               updated_at, match))
 
     def get_data(self, silence_id=None):
         """

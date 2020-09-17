@@ -8,6 +8,8 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 import collections, json
+from filecmp import cmp
+
 import api
 from functools import reduce
 from nsgcli import sub_command, response_formatter
@@ -49,7 +51,7 @@ def compare_members(m1, m2):
     if score1 == score2:
         return cmp(m1['name'], m2['name'])
     else:
-        return cmp(score1, score2)
+        return cmp(bytes(score1), bytes(score2))
 
 
 def transform_roles(roles):

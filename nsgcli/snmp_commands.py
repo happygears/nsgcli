@@ -7,8 +7,12 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-import json, types
+
+import json
+import types
+
 import api
+
 from nsgcli import system, sub_command
 
 SNMP_RESPONSE_FORMAT = """
@@ -109,9 +113,10 @@ class SnmpCommands(sub_command.SubCommand, object):
                     # pass
                     # print(acr)
                     status = self.parse_status(acr)
-                    self.print_snmp_response(acr, status)
+                    self.print_snmp_response(acr)
 
-    def print_snmp_response(self, acr, status):
+    @staticmethod
+    def print_snmp_response(acr):
         try:
             for line in acr['response']:
                 print('{0} | {1}'.format(acr['agent'], line))

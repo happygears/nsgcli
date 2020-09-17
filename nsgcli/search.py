@@ -11,6 +11,7 @@ import json
 import api
 from nsgcli import response_formatter, sub_command
 
+
 class SearchCommand(sub_command.SubCommand, object):
     # prompt = "show # "
 
@@ -76,4 +77,3 @@ class SearchCommand(sub_command.SubCommand, object):
             return 503, ex
         else:
             return 200, json.loads(response.content)
-
