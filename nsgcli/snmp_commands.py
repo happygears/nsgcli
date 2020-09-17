@@ -7,7 +7,8 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-import json, types, api
+import json, types
+import api
 from nsgcli import system, sub_command
 
 SNMP_RESPONSE_FORMAT = """

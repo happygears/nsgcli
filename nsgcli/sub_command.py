@@ -7,7 +7,8 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-import json, api, cmd, types
+import json, cmd, types
+import api
 
 SKIP_NAMES_FOR_COMPLETION = ['EOF', 'q']
 
