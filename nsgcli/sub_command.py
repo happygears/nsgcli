@@ -31,7 +31,7 @@ class HashableAgentCommandResponse(set):
         return self.acr.__getitem__(item)
 
     def __str__(self):
-        return str(acr)
+        return str(self.acr)
 
 
 def sizeof_fmt(num, suffix='B'):
