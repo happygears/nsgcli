@@ -7,13 +7,10 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
 import json
 from cmd import Cmd
-
 import nsgcli.api
-import response_formatter
-
+from nsgcli import response_formatter
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'

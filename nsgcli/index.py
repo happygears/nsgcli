@@ -7,14 +7,9 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
-import datetime
-import json
-
+import datetime, json, api
 from typing import Dict, Any
-
-import api
-import sub_command
+from nsgcli import sub_command
 
 
 class IndexCommands(sub_command.SubCommand, object):

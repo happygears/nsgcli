@@ -7,13 +7,8 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
-import json
-
-import api
-import sub_command
-import response_formatter
-
+import json, api
+from nsgcli import response_formatter, sub_command
 
 class SearchCommand(sub_command.SubCommand, object):
     # prompt = "show # "

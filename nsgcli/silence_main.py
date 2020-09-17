@@ -10,12 +10,7 @@
 #
 #
 
-import email
-import json
-import time
-import types
-import nsgcli.api
-
+import email, json, nsgcli.api
 
 class Silence:
 

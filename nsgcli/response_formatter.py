@@ -6,10 +6,8 @@ This module is part of the nsgcli package
 """
 
 from __future__ import print_function
-
-import datetime
-import numbers
-import time
+import datetime, numbers
+from numpy.compat import basestring
 
 TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince', 'timeOfLastNotification']
 

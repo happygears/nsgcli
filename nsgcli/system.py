@@ -7,15 +7,9 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
-import collections
-import datetime
-import json
-import time
-
-import api
-import sub_command
-import response_formatter
+import collections, json, api
+from functools import reduce
+from nsgcli import sub_command, response_formatter
 
 ROLE_MAP = {
     'manager': 'mgr',

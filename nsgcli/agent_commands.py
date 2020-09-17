@@ -6,14 +6,9 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-
 from __future__ import print_function
-
-import json
-import types
-
-import api
-import sub_command
+import json, types, api
+from nsgcli import sub_command
 
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})

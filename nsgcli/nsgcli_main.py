@@ -7,18 +7,8 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
-import json
-
-import api
-import index
-import show
-import search
-import agent_commands
-import exec_commands
-import snmp_commands
-import sub_command
-
+import json, api, show, search
+from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'

@@ -7,9 +7,7 @@ This module implements the NetSpyGlass API
 """
 
 from __future__ import print_function
-
-import copy
-import json
+import copy, json
 
 # from requests.packages import urllib3
 
