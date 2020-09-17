@@ -7,13 +7,14 @@ This module implements the NetSpyGlass API
 """
 
 from __future__ import print_function
-import copy, json
 
-# from requests.packages import urllib3
+import copy
+import json
 
 import urllib3
-
 from requests_unixsocket import Session
+
+# from requests.packages import urllib3
 
 try:
     import http.client as httplib

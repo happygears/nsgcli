@@ -10,11 +10,7 @@ from __future__ import print_function
 
 import json
 
-import api
-import search
-import show
-
-from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands
+from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands, api, show, search
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
@@ -53,7 +49,8 @@ class NsgCLI(sub_command.SubCommand, object):
             self.prompt = ' [' + self.current_region + '] > '
         return self.prompt
 
-    def summary(self):
+    @staticmethod
+    def summary():
         print()
         print('Type "help" to get list of commands; "help command" returns more details about selected command.')
         print('Typing "command" with no arguments executes it or enters this commands context.')
@@ -136,7 +133,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_cache(self):
+    @staticmethod
+    def help_cache():
         print('Operations with cache. Supported arguments: {0}'.format(CACHE_ARGS))
 
     def complete_cache(self, text, _line, _begidx, _endidx):
@@ -151,7 +149,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_nsgql(self):
+    @staticmethod
+    def help_nsgql():
         print('Operations with NsgQL schema. Supported arguments: {0}'.format(NSGQL_ARGS))
 
     def complete_nsgql(self, text, _line, _begidx, _endidx):
@@ -167,7 +166,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_reload(self):
+    @staticmethod
+    def help_reload():
         print('Reload things. Supported arguments: {0}'.format(RELOAD_ARGS))
 
     def complete_reload(self, text, _line, _begidx, _endidx):
@@ -183,7 +183,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_make(self):
+    @staticmethod
+    def help_make():
         print('Make things. Supported arguments: {0}'.format(MAKE_ARGS))
 
     def complete_make(self, text, _line, _begidx, _endidx):
@@ -199,7 +200,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_discovery(self):
+    @staticmethod
+    def help_discovery():
         print('Operations with network discovery. Supported arguments: {0}'.format(DISCOVERY_ARGS))
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
@@ -215,7 +217,8 @@ class NsgCLI(sub_command.SubCommand, object):
         if response is not None:
             self.print_response(response)
 
-    def help_hud(self):
+    @staticmethod
+    def help_hud():
         print('Operations with HUD in the UI. Supported arguments: {0}'.format(HUD_ARGS))
 
     def complete_hud(self, text, _line, _begidx, _endidx):
@@ -447,5 +450,3 @@ class NsgCLI(sub_command.SubCommand, object):
                         print('ERROR: {0}'.format(json.loads(line)))
                         return None
                 return json.loads(response.content)
-
-

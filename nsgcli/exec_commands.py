@@ -8,8 +8,7 @@ This module implements subset of NetSpyGlass CLI commands
 
 from __future__ import print_function
 import json
-import api
-from nsgcli import sub_command
+from nsgcli import sub_command, api
 
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})
@@ -105,7 +104,8 @@ class ExecCommands(sub_command.SubCommand, object):
         """
         self.common_command('traceroute', args, deduplicate_replies=False, hide_errors=False)
 
-    def parse_fping_status(self, acr):
+    @staticmethod
+    def parse_fping_status(acr):
         ec = acr['exitStatus']
         if ec == 0:
             status = 'ok'
@@ -124,4 +124,3 @@ class ExecCommands(sub_command.SubCommand, object):
         else:
             status = 'unknown error'
         return status
-

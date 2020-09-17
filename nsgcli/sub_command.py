@@ -10,9 +10,8 @@ from __future__ import print_function
 
 import cmd
 import json
-import types
 
-import api
+from nsgcli import api
 
 SKIP_NAMES_FOR_COMPLETION = ['EOF', 'q']
 
@@ -23,6 +22,7 @@ EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args
 class HashableAgentCommandResponse(set):
 
     def __init__(self, acr):
+        super().__init__()
         self.acr = acr
 
     def __eq__(self, other):
@@ -66,7 +66,8 @@ class SubCommand(cmd.Cmd, object):
     def emptyline(self):
         pass
 
-    def do_quit(self, args):
+    @staticmethod
+    def do_quit():
         return True
 
     do_EOF = do_quit
@@ -81,7 +82,8 @@ class SubCommand(cmd.Cmd, object):
         """
         return super(SubCommand, self).complete(text, state) + ' '
 
-    def complete_cmd(self, text, variants):
+    @staticmethod
+    def complete_cmd(text, variants):
         if not text:
             completions = variants[:]
         else:
@@ -95,7 +97,8 @@ class SubCommand(cmd.Cmd, object):
         # print('SubCommand.completedefault text=' + text + ', _line=' + _line)
         return self.get_args(text)
 
-    def print_success(self, response):
+    @staticmethod
+    def print_success(response):
         print(response['success'])
 
     def print_response(self, response):
@@ -105,9 +108,9 @@ class SubCommand(cmd.Cmd, object):
             self.print_success(response)
 
     def is_error(self, response):
-        if isinstance(response, types.ListType):
+        if isinstance(response, list):
             return self.is_error(response[0])
-        return isinstance(response, types.DictionaryType) and response.get('status', 'ok').lower() != 'ok'
+        return isinstance(response, dict) and response.get('status', 'ok').lower() != 'ok'
 
     def get_error(self, response):
         """
@@ -120,7 +123,8 @@ class SubCommand(cmd.Cmd, object):
         else:
             return str(response)
 
-    def get_success(self, response):
+    @staticmethod
+    def get_success(response):
         """
         if the response is in standard form (a dictionary with key 'error' or 'success') then
         this function finds and returns the value of the key 'success'. Otherwise it returns
@@ -182,7 +186,8 @@ class SubCommand(cmd.Cmd, object):
                     for status, acr in replies:
                         self.print_agent_response(acr, status)
 
-    def print_agent_response(self, acr, status):
+    @staticmethod
+    def print_agent_response(acr, status):
         try:
             if not status or status == 'ok':
                 for line in acr['response']:
@@ -206,5 +211,6 @@ class SubCommand(cmd.Cmd, object):
                 status = 'unknown error'
             return status
         except Exception as e:
+            print(e)
             print('Can not parse status in "{0}"'.format(acr))
             return 'unknown'

@@ -69,7 +69,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             return 200, json.loads(response.content)
 
     ##########################################################################################
-    def do_version(self, args):
+    def do_version(self):
         """
         Print software version
         """
@@ -81,7 +81,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(response['version'])
 
     ##########################################################################################
-    def do_uuid(self, args):
+    def do_uuid(self):
         """
         Print NSG cluster uuid
         """
@@ -93,7 +93,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(response['uuid'])
 
     ##########################################################################################
-    def do_cache(self, arg):
+    def do_cache(self):
         """
         List contents of the long- and short-term NsgQL cache
         """
@@ -104,7 +104,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(json.dumps(resp_json, indent=4))
 
     ##########################################################################################
-    def do_server(self, arg):
+    def do_server(self):
         """
         Print server status
         """
@@ -190,6 +190,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                     try:
                         response = json.loads(response.content)
                     except Exception as e:
+                        print(e)
                         print(response.content)
                     else:
                         filtered = {}
@@ -211,15 +212,16 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         if status != 200:
             print('ERROR: {0}'.format(self.get_error(response)))
         else:
-            format = '{0[id]:<4} {0[name]:<32} {0[type]:<12} {1:<20}'
+            formatNSG = '{0[id]:<4} {0[name]:<32} {0[type]:<12} {1:<20}'
             header = {'id': 'id', 'name': 'name', 'type': 'type'}
-            print(format.format(header, 'updated_at'))
+            print(formatNSG.format(header, 'updated_at'))
             print('-' * 60)
             for view in response[0]['views']:
                 updated_at = self.transform_value('updatedAt', view['updatedAt'])
-                print(format.format(view, updated_at))
+                print(formatNSG.format(view, updated_at))
 
-    def transform_value(self, field_name, value, outdated=False):
+    @staticmethod
+    def transform_value(field_name, value, outdated=False):
         if field_name in ['updatedAt', 'localTimeMs']:
             updated_at_sec = float(value) / 1000
             value = datetime.datetime.fromtimestamp(updated_at_sec)
@@ -230,7 +232,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         return value
 
     ##########################################################################################
-    def do_index(self, arg):
+    def do_index(self):
         """
         List NsgQL indexes and their cardinality
         """
@@ -286,19 +288,22 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             new_obj['updatedAt'] = self.convert_updated_at(updated_at) + ' ago'
         return new_obj
 
-    def convert_updated_at(self, updated_at_ms):
+    @staticmethod
+    def convert_updated_at(updated_at_ms):
         updated_at_sec = float(updated_at_ms) / 1000.0
         value = datetime.datetime.fromtimestamp(updated_at_sec)
         delta = datetime.datetime.now() - value
         return str(delta - datetime.timedelta(microseconds=delta.microseconds))
 
-    def update_column_width(self, obj, column_name, col_wid_dict):
+    @staticmethod
+    def update_column_width(obj, column_name, col_wid_dict):
         w = col_wid_dict.get(column_name, 0)
         txt = unicode(obj.get(column_name, ''))
         w = max(w, len(txt))
         col_wid_dict[column_name] = w
 
-    def parse_index_key(self, index_key):
+    @staticmethod
+    def parse_index_key(index_key):
         """
         parse index key and return table, column and suffix
 

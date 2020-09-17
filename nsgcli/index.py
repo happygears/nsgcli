@@ -12,9 +12,7 @@ import datetime
 import json
 from typing import Dict, Any
 
-import api
-
-from nsgcli import sub_command
+from nsgcli import sub_command, api
 
 
 class IndexCommands(sub_command.SubCommand, object):
@@ -36,7 +34,7 @@ class IndexCommands(sub_command.SubCommand, object):
 
     ##########################################################################################
 
-    def do_refresh(self, arg):
+    def do_refresh(self):
         """
         Refresh all NsgQL indexes
         """
@@ -53,7 +51,7 @@ class IndexCommands(sub_command.SubCommand, object):
                 else:
                     print(response.content)
 
-    def do_drop(self, arg):
+    def do_drop(self):
         """
         List NsgQL indexes and their cardinality
         """
@@ -123,7 +121,7 @@ class IndexCommands(sub_command.SubCommand, object):
                     result = self.get_success(response_dict)
             print('Creating index {0}:{1}:{2} -- {3}'.format(table, column, nsgql_function, result))
 
-    def do_show(self, arg):
+    def do_show(self):
         """
         List NsgQL indexes and their cardinality
         """
@@ -180,18 +178,21 @@ class IndexCommands(sub_command.SubCommand, object):
             new_obj['updatedAt'] = self.convert_updated_at(updated_at) + ' ago'
         return new_obj
 
-    def convert_updated_at(self, updated_at_ms):
+    @staticmethod
+    def convert_updated_at(updated_at_ms):
         updated_at_sec = float(updated_at_ms) / 1000.0
         value = datetime.datetime.fromtimestamp(updated_at_sec)
         delta = datetime.datetime.now() - value
         return str(delta - datetime.timedelta(microseconds=delta.microseconds))
 
-    def update_column_width(self, obj, column_name, col_wid_dict):
+    @staticmethod
+    def update_column_width(obj, column_name, col_wid_dict):
         w = col_wid_dict.get(column_name, 0)
         w = max(w, len(str(obj.get(column_name, ''))))
         col_wid_dict[column_name] = w
 
-    def parse_index_key(self, index_key):
+    @staticmethod
+    def parse_index_key(index_key):
         """
         parse index key and return table, column and suffix
 

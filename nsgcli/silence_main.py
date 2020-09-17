@@ -10,7 +10,10 @@
 #
 #
 
-import email, json, nsgcli.api
+import json
+from email.utils import formatdate
+
+from nsgcli import api
 
 
 class Silence:
@@ -138,10 +141,10 @@ class NetSpyGlassAlertSilenceControl:
     def print_silence(self, silence):
         silence_dict = silence.get_dict()
         id = silence.id
-        start_time = email.utils.formatdate(silence.start_time_ms / 1000, localtime=True)
+        start_time = formatdate(silence.start_time_ms / 1000, localtime=True)
         exp_min = silence.expiration_time_ms / 1000 / 60
-        created_at = email.utils.formatdate(silence.created_at / 1000, localtime=True)
-        updated_at = email.utils.formatdate(silence.updated_at / 1000, localtime=True)
+        created_at = formatdate(silence.created_at / 1000, localtime=True)
+        updated_at = formatdate(silence.updated_at / 1000, localtime=True)
         match = silence_dict.get('match', '{}')
         print(self.silence_print_format.format(id, start_time, exp_min, silence.user, silence.reason, created_at,
                                                updated_at, match))
@@ -158,7 +161,7 @@ class NetSpyGlassAlertSilenceControl:
             request += str(silence_id)
 
         try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+            response = api.call(self.base_url, 'GET', request, token=self.token)
         except Exception as ex:
             return 503, ex
         else:
@@ -185,7 +188,7 @@ class NetSpyGlassAlertSilenceControl:
 
         try:
             # serialized = json.dumps(silence.get_dict())
-            response = nsgcli.api.call(self.base_url, 'POST', request, token=self.token, data=silence.get_dict())
+            response = api.call(self.base_url, 'POST', request, token=self.token, data=silence.get_dict())
         except Exception as ex:
             return 503, ex
         else:

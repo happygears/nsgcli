@@ -10,9 +10,10 @@ from __future__ import print_function
 import datetime
 import numbers
 
-from numpy.compat import basestring
+import numpy.compat
 
-TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince', 'timeOfLastNotification']
+TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
+                'timeOfLastNotification']
 
 MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
                        'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',
@@ -137,7 +138,7 @@ class ResponseFormatter(object):
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
             return percentage_fmt(value)
 
-        if isinstance(value, basestring):
+        if isinstance(value, numpy.compat.basestring):
             return value.encode("utf-8").rstrip()
         else:
             return value

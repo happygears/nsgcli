@@ -9,8 +9,7 @@ This module implements subset of NetSpyGlass CLI commands
 from __future__ import print_function
 import json
 from cmd import Cmd
-import nsgcli.api
-from nsgcli import response_formatter
+from nsgcli import response_formatter, api
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
@@ -30,12 +29,14 @@ class NsgQLCommandLine(Cmd):
         self.time_format = time_format
         self.timeout_sec = timeout_set
 
-    def do_q(self, arg):
+    @staticmethod
+    def do_q():
         """Quits the program."""
         print('Quitting.')
         raise SystemExit
 
-    def do_quit(self, arg):
+    @staticmethod
+    def do_quit():
         """Quits the program."""
         print('Quitting.')
         raise SystemExit
@@ -43,19 +44,10 @@ class NsgQLCommandLine(Cmd):
     def do_select(self, arg):
         self.execute('SELECT {0}'.format(arg))
 
-    def do_SELECT(self, arg):
-        self.execute('SELECT {0}'.format(arg))
-
     def do_show(self, arg):
         self.execute('SHOW {0}'.format(arg))
 
-    def do_SHOW(self, arg):
-        self.execute('SHOW {0}'.format(arg))
-
     def do_describe(self, arg):
-        self.execute('DESCRIBE {0}'.format(arg))
-
-    def do_DESCRIBE(self, arg):
         self.execute('DESCRIBE {0}'.format(arg))
 
     def execute(self, arg):
@@ -122,5 +114,5 @@ class NsgQLCommandLine(Cmd):
                     }
                 )
 
-        return nsgcli.api.call(self.base_url, 'POST', path,
+        return api.call(self.base_url, 'POST', path,
                                data=nsgql, token=self.access_token, stream=True, timeout=self.timeout_sec)
