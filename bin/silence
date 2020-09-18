@@ -10,6 +10,9 @@ import os
 import pytz
 import sys
 import time
+
+from dateutil.tz import tzlocal
+
 import nsgcli.silence_main
 
 
@@ -152,7 +155,7 @@ if __name__ == '__main__':
     start_time = 0
 
     epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
-    default_tz = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzlocal())
+    default_tz = datetime.datetime(1970, 1, 1, tzinfo=tzlocal())
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:

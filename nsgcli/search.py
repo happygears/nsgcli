@@ -7,12 +7,8 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 from __future__ import print_function
-
 import json
-
-import api
-import sub_command
-import response_formatter
+from nsgcli import response_formatter, sub_command, api
 
 
 class SearchCommand(sub_command.SubCommand, object):
@@ -30,7 +26,8 @@ class SearchCommand(sub_command.SubCommand, object):
     def completedefault(self, text, _line, _begidx, _endidx):
         return self.get_args(text)
 
-    def help(self):
+    @staticmethod
+    def help():
         print('Search device by its id, name, address, or serial number')
 
     def nsgql_call(self, query):
@@ -80,4 +77,3 @@ class SearchCommand(sub_command.SubCommand, object):
             return 503, ex
         else:
             return 200, json.loads(response.content)
-

@@ -11,11 +11,10 @@ from __future__ import print_function
 import copy
 import json
 
-# from requests.packages import urllib3
-
 import urllib3
-
 from requests_unixsocket import Session
+
+# from requests.packages import urllib3
 
 try:
     import http.client as httplib

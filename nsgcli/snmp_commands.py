@@ -9,11 +9,8 @@ This module implements subset of NetSpyGlass CLI commands
 from __future__ import print_function
 
 import json
-import types
 
-import api
-import sub_command
-import system
+from nsgcli import system, sub_command, api
 
 SNMP_RESPONSE_FORMAT = """
 Source:   {m[agent]} ({m[agentAddress]})
@@ -36,7 +33,8 @@ class SnmpCommands(sub_command.SubCommand, object):
         else:
             self.prompt = '[{0}] snmp # '.format(self.current_region)
 
-    def help(self):
+    @staticmethod
+    def help():
         print('Execute SNMP GET or WALK query remotely on one of the agents in a region. Supported commands: get, walk')
         print('')
         print('Syntax:   snmp <command> <address> <oid1> [timeout] ')
@@ -112,10 +110,10 @@ class SnmpCommands(sub_command.SubCommand, object):
                 for acr in api.transform_remote_command_response_stream(response):
                     # pass
                     # print(acr)
-                    status = self.parse_status(acr)
-                    self.print_snmp_response(acr, status)
+                    self.print_snmp_response(acr)
 
-    def print_snmp_response(self, acr, status):
+    @staticmethod
+    def print_snmp_response(acr):
         try:
             for line in acr['response']:
                 print('{0} | {1}'.format(acr['agent'], line))
@@ -136,12 +134,13 @@ class SnmpCommands(sub_command.SubCommand, object):
                 status = 'unknown error'
             return status
         except Exception as e:
+            print(e)
             print('Can not parse status in "{0}"'.format(acr))
             return 'unknown'
 
     def get_error(self, response):
-        if isinstance(response, types.ListType):
+        if isinstance(response, list):
             return self.get_error(response[0])
-        if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
+        if isinstance(response, str):
             return response
         return response.get('error', '')
