@@ -6,11 +6,8 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import collections
 import json
-from filecmp import cmp
 from functools import reduce
 
 from nsgcli import sub_command, response_formatter, api
@@ -42,17 +39,12 @@ def score_roles(roles):
     return score1
 
 
-def compare_members(m1, m2):
+def member_compare_key(m):
     """
     Compare cluster member dictionaries by their role. This can be used to put primary and secondary
     servers at the top of the list
     """
-    score1 = score_roles(m1['role'])
-    score2 = score_roles(m2['role'])
-    if score1 == score2:
-        return cmp(m1['name'], m2['name'])
-    else:
-        return cmp(bytes(score1), bytes(score2))
+    return score_roles(m['role']), m['name']
 
 
 def transform_roles(roles):
@@ -163,7 +155,7 @@ class SystemCommands(sub_command.SubCommand, object):
     def help(self):
         print('Show various system parameters and state variables. Arguments: {0}'.format(self.get_args()))
 
-    def do_filesystem(self):
+    def do_filesystem(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -181,7 +173,7 @@ class SystemCommands(sub_command.SubCommand, object):
         #     response = response[0]
         #     self.table_formatter.print_result_as_table(response)
 
-    def do_memory(self):
+    def do_memory(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,component,NsgRegion,systemMemFreePercent,systemMemTotal FROM systemMemTotal '
             'WHERE systemMemFreePercent NOT NULL AND systemMemTotal NOT NULL ORDER BY device')
@@ -191,7 +183,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_cpu(self):
+    def do_cpu(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -207,7 +199,7 @@ class SystemCommands(sub_command.SubCommand, object):
         #     response = response[0]
         #     self.table_formatter.print_result_as_table(response)
 
-    def do_tsdb(self):
+    def do_tsdb(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,component,NsgRegion,'
             'tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
@@ -220,7 +212,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_python(self):
+    def do_python(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,NsgRegion,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
         if status != 200 or self.is_error(response):
@@ -229,7 +221,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_c3p0(self):
+    def do_c3p0(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,c3p0NumConnections, c3p0NumBusyConnections, c3p0NumIdleConnections,'
             'c3p0NumFailedCheckouts, c3p0NumFailedIdleTests FROM c3p0NumConnections ORDER BY device')
@@ -239,7 +231,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_jvm(self):
+    def do_jvm(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,NsgRegion,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
             'FROM jvmMemTotal ORDER BY device')
@@ -249,7 +241,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_agent_command_executor(self):
+    def do_agent_command_executor(self, _):
         status, response = self.nsgql_call(
             'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
             'FROM poolSize ORDER BY device')
@@ -259,7 +251,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_redis(self):
+    def do_redis(self, _):
         status, response = self.nsgql_call(
             'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,redisUsedMemory,redisMaxMemory,'
             'redisUsedCpuSysRate,redisUsedCpuUserRate,redisConnectedClients,redisCommandsRate '
@@ -279,7 +271,7 @@ class SystemCommands(sub_command.SubCommand, object):
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
-    def do_lag(self):
+    def do_lag(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -290,7 +282,7 @@ class SystemCommands(sub_command.SubCommand, object):
                  'processUptime', 'updatedAt'],
                 response)
 
-    def do_sum(self):
+    def do_sum(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -301,7 +293,7 @@ class SystemCommands(sub_command.SubCommand, object):
                  'lagTotal', 'cycleNumber', 'processUptime', 'updatedAt'],
                 response)
 
-    def do_devices(self):
+    def do_devices(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -311,7 +303,7 @@ class SystemCommands(sub_command.SubCommand, object):
                  'processUptime', 'updatedAt'],
                 response)
 
-    def do_version(self):
+    def do_version(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -320,7 +312,7 @@ class SystemCommands(sub_command.SubCommand, object):
                 ['name', 'nsgVersion', 'revision', 'processUptime', 'updatedAt'],
                 response)
 
-    def do_status(self):
+    def do_status(self, _):
         status, response = self.status_api_call()
         if status != 200 or self.is_error(response):
             print('ERROR: {0}'.format(self.get_error(response)))
@@ -352,7 +344,7 @@ class SystemCommands(sub_command.SubCommand, object):
         this_server = status_json['name']
 
         # sort members once, and do it before I mangle their names
-        sorted_members = sorted(status_json['members'], key=compare_members)
+        sorted_members = sorted(status_json['members'], key=member_compare_key)
         for member in sorted_members:
             update_member(member, this_server)
             for field in names:

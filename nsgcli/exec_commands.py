@@ -6,7 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
 import json
 from nsgcli import sub_command, api
 

@@ -6,8 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import datetime
 import json
 from typing import Dict, Any
@@ -34,7 +32,7 @@ class IndexCommands(sub_command.SubCommand, object):
 
     ##########################################################################################
 
-    def do_refresh(self):
+    def do_refresh(self, _):
         """
         Refresh all NsgQL indexes
         """
@@ -51,7 +49,7 @@ class IndexCommands(sub_command.SubCommand, object):
                 else:
                     print(response.content)
 
-    def do_drop(self):
+    def do_drop(self, _):
         """
         List NsgQL indexes and their cardinality
         """
@@ -121,7 +119,7 @@ class IndexCommands(sub_command.SubCommand, object):
                     result = self.get_success(response_dict)
             print('Creating index {0}:{1}:{2} -- {3}'.format(table, column, nsgql_function, result))
 
-    def do_show(self):
+    def do_show(self, _):
         """
         List NsgQL indexes and their cardinality
         """

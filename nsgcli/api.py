@@ -6,53 +6,28 @@ This module implements the NetSpyGlass API
 
 """
 
-from __future__ import print_function
-
 import copy
 import json
+import requests
 
-import urllib3
-from requests_unixsocket import Session
-
-# from requests.packages import urllib3
-
-try:
-    import http.client as httplib
-except ImportError:
-    import httplib
 
 
 def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
     """
     Make NetSpyGlass JSON API call to execute query
 
-    :param base_url:     - if unix socket, then this is 'http+unix:///path_to_socket';
-                           if http over tcp, then this is 'http://host' or 'https://host'
+    :param base_url:     - this is 'http://host' or 'https://host'
     :param method:       - GET, PUT or POST
     :param uri_path:     - API call url without "http:/server" part and without any query string parameters
     :param data:         - (a dictionary) this is the request data for PUT and POST requests
                            or query string for GET requests
-    :param token:        - (optional) access token if we talk to the server over the network rather than
-                            unix socket
+    :param token:        - access token
     :param timeout:      - timeout, seconds
     :param headers:      - http request headers
     :param stream:       - if True, return result as a stream (default=True)
     """
-# disable warning
-# InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised.
-# See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
-    urllib3.disable_warnings()
 
-    if 'http+unix://' in base_url:
-        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers, stream=stream)
-    else:
-        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers, stream=stream)
-
-
-def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, headers=None, stream=True):
-    url = make_socket_url(base_url, uri_path)
-    return make_call(url, method, data, timeout, headers={}, stream=stream)
-
+    return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers, stream=stream)
 
 def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, headers=None, stream=True):
     """
@@ -72,13 +47,12 @@ def make_call(url, method, data, timeout, headers, stream=False):
 
     # timeout_obj = urllib3.Timeout(connect=timeout, read=timeout)
 
-    session = Session()
     if method == 'GET':
-        response = session.get(url, params=data, timeout=timeout, headers=headers, verify=False, stream=stream)
+        response = requests.get(url, params=data, timeout=timeout, headers=headers, verify=False, stream=stream)
     elif method == 'POST':
-        response = session.post(url, json=data, timeout=timeout, headers=headers, verify=False, stream=stream)
+        response = requests.post(url, json=data, timeout=timeout, headers=headers, verify=False, stream=stream)
     elif method == 'PUT':
-        response = session.put(url, data=data, timeout=timeout, headers=headers, verify=False)
+        response = requests.put(url, data=data, timeout=timeout, headers=headers, verify=False)
     else:
         raise NotImplementedError('Invalid request method {0}'.format(method))
     if response.encoding is None:

@@ -5,12 +5,8 @@ This module is part of the nsgcli package
 :license: Apache2, see LICENSE for more details.
 """
 
-from __future__ import print_function
-
 import datetime
 import numbers
-
-import numpy.compat
 
 TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
                 'timeOfLastNotification']
@@ -138,7 +134,7 @@ class ResponseFormatter(object):
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
             return percentage_fmt(value)
 
-        if isinstance(value, numpy.compat.basestring):
-            return value.encode("utf-8").rstrip()
+        if isinstance(value, bytes):
+            return value.decode("utf-8")
         else:
             return value

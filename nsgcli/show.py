@@ -6,14 +6,10 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import datetime
 import json
 import time
 from typing import Dict, Any
-
-from numpy.core import unicode
 
 import nsgcli.api
 import nsgcli.response_formatter
@@ -69,7 +65,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             return 200, json.loads(response.content)
 
     ##########################################################################################
-    def do_version(self):
+    def do_version(self, _):
         """
         Print software version
         """
@@ -81,7 +77,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(response['version'])
 
     ##########################################################################################
-    def do_uuid(self):
+    def do_uuid(self, _):
         """
         Print NSG cluster uuid
         """
@@ -93,7 +89,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(response['uuid'])
 
     ##########################################################################################
-    def do_cache(self):
+    def do_cache(self, _):
         """
         List contents of the long- and short-term NsgQL cache
         """
@@ -104,7 +100,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             print(json.dumps(resp_json, indent=4))
 
     ##########################################################################################
-    def do_server(self):
+    def do_server(self, _):
         """
         Print server status
         """
@@ -232,7 +228,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         return value
 
     ##########################################################################################
-    def do_index(self):
+    def do_index(self, _):
         """
         List NsgQL indexes and their cardinality
         """
@@ -298,7 +294,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
     @staticmethod
     def update_column_width(obj, column_name, col_wid_dict):
         w = col_wid_dict.get(column_name, 0)
-        txt = unicode(obj.get(column_name, ''))
+        txt = str(obj.get(column_name, ''))
         w = max(w, len(txt))
         col_wid_dict[column_name] = w
 

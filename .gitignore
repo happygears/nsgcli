@@ -5,6 +5,7 @@
 /dist/
 /build/
 /archive/
+venv/
 /.idea/
 
 # Python egg metadata, regenerated from source files by setuptools.

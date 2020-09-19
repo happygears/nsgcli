@@ -22,7 +22,7 @@ setuptools.setup(name='nsgcli',
                  license='Apache',
                  packages=setuptools.find_packages(),
                  install_requires=[
-                     'requests', 'requests-unixsocket', 'pyhocon', 'typing', 'python-dateutil'
+                     'urllib3', 'requests', 'typing', 'python-dateutil'
                  ],
                  scripts=['bin/nsgcli', 'bin/nsgql', 'bin/silence'],
                  include_package_data=True,
