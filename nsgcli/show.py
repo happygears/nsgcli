@@ -8,355 +8,195 @@ This module implements subset of NetSpyGlass CLI commands
 
 import datetime
 import json
+import click
 import time
-from typing import Dict, Any
+from typing import Dict, List, Any
 
-import nsgcli.api
-import nsgcli.response_formatter
-import nsgcli.sub_command
+from nsgcli.api import API
 import nsgcli.system
 
 
-class ShowCommands(nsgcli.sub_command.SubCommand, object):
-    # prompt = "show # "
+@click.group()
+@click.pass_context
+def show(_: click.Context) -> None:
+    pass
 
-    def __init__(self, base_url, token, net_id, time_format=nsgcli.response_formatter.TIME_FORMAT_MS, region=None):
-        super(ShowCommands, self).__init__(base_url, token, net_id)
-        self.system_commands = nsgcli.system.SystemCommands(
-            self.base_url, self.token, self.netid, time_format=time_format, region=region)
-        self.current_region = region
-        if region is None:
-            self.prompt = 'show # '
-        else:
-            self.prompt = 'show [' + self.current_region + '] # '
+@show.command()
+@click.pass_context
+def status(ctx) -> None:
+    """
+    Print server status as JSON
+    """
+    api: API = ctx.obj['api']
+    print(json.dumps(api.get_status(), indent=4))
 
-    def completedefault(self, text, _line, _begidx, _endidx):
-        # _line='show system' if user hits Tab after "show system"
-        # this method is not called when user enters "show system" context and hits Tab then
-        # print('ShowCommands.completedefault text=' + text + ', _line=' + _line)
-        if _line and ' system' in _line:
-            return self.complete_system(text, _line, _begidx, _endidx)
-        else:
-            return self.get_args(text)
 
-    def help(self):
-        print('Show various server parameters and state variables. Arguments: {0}'.format(self.get_args()))
+@show.command()
+@click.pass_context
+def version(ctx: click.Context):
+    """
+    Print software version
+    """
+    api: API = ctx.obj['api']
+    print(api.get_status()['version'])
 
-    def get_status(self):
-        request = 'v2/ui/net/{0}/status'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return 200, json.loads(response.content)
 
-    def get_cache_data(self):
-        """
-        make API call /v2/ui/net/{0}/actions/cache/list and return the response
-        as a tuple (http_code,json)
-        """
-        request = 'v2/ui/net/{0}/actions/cache/list'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return 200, json.loads(response.content)
+@show.command()
+@click.pass_context
+def cache(ctx: click.Context) -> None:
+    """
+    List contents of the long- and short-term NsgQL cache
+    """
+    api: API = ctx.obj['api']
+    print(json.dumps(api.get_cache_data(), indent=4))
 
-    ##########################################################################################
-    def do_version(self, _):
-        """
-        Print software version
-        """
-        status, response = self.get_status()
-        if status != 200:
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            print(response['version'])
 
-    ##########################################################################################
-    def do_uuid(self, _):
-        """
-        Print NSG cluster uuid
-        """
-        status, response = self.get_status()
-        if status != 200:
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            print(response['uuid'])
+show.add_command(nsgcli.system.system)
 
-    ##########################################################################################
-    def do_cache(self, _):
-        """
-        List contents of the long- and short-term NsgQL cache
-        """
-        status, resp_json = self.get_cache_data()
-        if status != 200:
-            print('ERROR: {0}'.format(self.get_error(resp_json)))
-        else:
-            print(json.dumps(resp_json, indent=4))
 
-    ##########################################################################################
-    def do_server(self, _):
-        """
-        Print server status
-        """
-        request = 'v2/nsg/test/net/{0}/server'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, data={'action': 'status'}, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            status = response.status_code
-            if status != 200:
-                print('ERROR: {0}'.format(self.get_error(response)))
-            else:
-                resp_dict = json.loads(response.content)
-                if 'success' in resp_dict:
-                    d = resp_dict.get('success', {})
-                    if isinstance(d, dict):
-                        resp_dict = d
-                    else:
-                        resp_dict = json.loads(d)
-                for key in sorted(resp_dict.keys()):
-                    if key == 'HA':
-                        continue
-                    print('{0:<8} :   {1}'.format(key, resp_dict.get(key, '')))
-
-    ##########################################################################################
-    def do_status(self, _):
-        """
-        Request server status
-        """
-        status, response = self.get_status()
-        if status != 200:
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            print(json.dumps(response, indent=4))
-
-    ##########################################################################################
-    def do_system(self, arg):
-        if arg:
-            self.system_commands.onecmd(arg)
-        else:
-            self.system_commands.cmdloop()
-
-    def help_system(self):
-        return self.system_commands.help()
-
-    def complete_system(self, text, _line, _begidx, _endidx):
-        return self.system_commands.completedefault(text, _line, _begidx, _endidx)
-
-    ##########################################################################################
-    def do_views(self, arg):
-        """
-        Show map views defined in the system.
-        Examples:
-            show views          -- list all views defined in the system
-            show views id NNN   -- prints parameters that define the view with id=NNNN.
-                                   This data can not be used to export/import views at this time.
-        """
-        if not arg:
-            self.list_views()
-            return
-        if arg[0:2] != 'id':
-            print('Unknown keyword "{0}"; expected "show view id N"'.format(arg))
-            return
-        # arg must be view Id
-        try:
-            id = arg.split()[1]
-            view_id = int(id)
-            request = 'v2/ui/net/{0}/views/{1}/map'.format(self.netid, view_id)
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token, stream=True)
-        except Exception as ex:
-            print(ex)
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    print('ERROR: {0}'.format(self.get_error(response)))
-                else:
-                    # the server does not have proper "export view" API function. Instead, I am using
-                    # the output of /status API call with some filtering. This is not suitable for
-                    # view export/import
-                    try:
-                        response = json.loads(response.content)
-                    except Exception as e:
-                        print(e)
-                        print(response.content)
-                    else:
-                        filtered = {}
-                        for k in response.keys():
-                            if k in ['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule',
-                                     'generation']:
-                                continue
-                            filtered[k] = response[k]
-                        print(json.dumps(filtered, indent=4))
-                        # print(response['formData'])
-
-    def list_views(self):
-        """
-        API call status returns a dictionary that has an item 'status' with value that is
-        also a dictionary. This makes parsing response harder
-        """
-        status, response = self.get_status()
-        # print(response)
-        if status != 200:
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            formatNSG = '{0[id]:<4} {0[name]:<32} {0[type]:<12} {1:<20}'
-            header = {'id': 'id', 'name': 'name', 'type': 'type'}
-            print(formatNSG.format(header, 'updated_at'))
-            print('-' * 60)
-            for view in response[0]['views']:
-                updated_at = self.transform_value('updatedAt', view['updatedAt'])
-                print(formatNSG.format(view, updated_at))
-
-    @staticmethod
-    def transform_value(field_name, value, outdated=False):
-        if field_name in ['updatedAt', 'localTimeMs']:
-            updated_at_sec = float(value) / 1000
-            value = datetime.datetime.fromtimestamp(updated_at_sec)
-            suffix = ''
-            if outdated and time.time() - updated_at_sec > 15:
-                suffix = ' outdated'
-            return value.strftime('%Y-%m-%d %H:%M:%S') + suffix
-        return value
-
-    ##########################################################################################
-    def do_index(self, _):
-        """
-        List NsgQL indexes and their cardinality
-        """
-        request = 'v2/ui/net/{0}/actions/indexes/list'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            ordered_columns = ['table', 'column', 'suffix', 'type', 'cardinality', 'redisKey', 'updatedAt']
-            title = {'table': 'table',
-                     'column': 'column',
-                     'suffix': 'ext',
-                     'redisKey': 'redis',
-                     'type': 'type',
-                     'cardinality': 'cardinality',
-                     'updatedAt': 'updatedAt'
-                     }
-            resp = json.loads(response.content)
-            column_width = {}  # type: Dict[Any, Any]
-            for column_name in title.keys():
-                self.update_column_width(title, column_name, column_width)
-            for row in resp:
-                converted = self.convert_obj(row, ordered_columns)
-                for column_name in ordered_columns:
-                    self.update_column_width(converted, column_name, column_width)
-            # assemble format string
-            table_columns = []
-            for column_name in ordered_columns:
-                table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
-            format_str = u' | '.join(table_columns)
-            title_line = format_str.format(title)
-            print(title_line)
-            print('-' * len(title_line))
-            counter = 0
-            for row in resp:
-                converted = self.convert_obj(row, ordered_columns)
-                print(format_str.format(converted))
-                counter += 1
-            print('-' * len(title_line))
-            print('Total: {}'.format(counter))
-
-    def convert_obj(self, obj, columns):
-        new_obj = obj.copy()
-        # fill in required columns that may be missing in the object
-        for col in columns:
-            if col not in new_obj:
-                new_obj[col] = ''
-        updated_at = int(obj['updatedAt'])
-        if updated_at == 0:
-            new_obj['updatedAt'] = '--'
-        else:
-            new_obj['updatedAt'] = self.convert_updated_at(updated_at) + ' ago'
-        return new_obj
-
-    @staticmethod
-    def convert_updated_at(updated_at_ms):
-        updated_at_sec = float(updated_at_ms) / 1000.0
+# TODO: check parameter, maybe do this differently
+def transform_value(field_name: str, value: Any, outdated=False) -> Any:
+    if field_name in ['updatedAt', 'localTimeMs']:
+        updated_at_sec = float(value) / 1000
         value = datetime.datetime.fromtimestamp(updated_at_sec)
-        delta = datetime.datetime.now() - value
-        return str(delta - datetime.timedelta(microseconds=delta.microseconds))
+        suffix = ''
+        if outdated and time.time() - updated_at_sec > 15:
+            suffix = ' outdated'
+        return value.strftime('%Y-%m-%d %H:%M:%S') + suffix
+    return value
 
-    @staticmethod
-    def update_column_width(obj, column_name, col_wid_dict):
-        w = col_wid_dict.get(column_name, 0)
-        txt = str(obj.get(column_name, ''))
-        w = max(w, len(txt))
-        col_wid_dict[column_name] = w
 
-    @staticmethod
-    def parse_index_key(index_key):
-        """
-        parse index key and return table, column and suffix
+def list_views(api: API) -> None:
+    """
+    API call status returns a dictionary that has an item 'status' with value that is
+    also a dictionary. This makes parsing response harder
+    """
+    status = api.get_status()
+    format_nsg = '{0[id]:<4} {0[name]:<32} {0[type]:<12} {1:<20}'
+    header = {'id': 'id', 'name': 'name', 'type': 'type'}
+    print(format_nsg.format(header, 'updated_at'))
+    print('-' * 60)
+    for view in status['views']:
+        updated_at = transform_value('updatedAt', view['updatedAt'])
+        print(format_nsg.format(view, updated_at))
 
-        currently recognized format is
 
-        table:column[.suffix]
-        """
-        first_colon = index_key.find(':')
-        if first_colon < 0:
-            return '', '', ''
-        table = index_key[0: first_colon]
-        last_dot = index_key.rfind('.')
-        if last_dot < 0:
-            column = index_key[first_colon + 1:]
-            suffix = ''
-        else:
-            column = index_key[first_colon + 1: last_dot]
-            suffix = index_key[last_dot + 1:]
-        return table, column, suffix
+VIEW_DROP_KEYS = frozenset(['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule', 'generation'])
 
-    ##########################################################################################
-    def do_device(self, arg):
-        """
-        Inspect device identified by its device Id
 
-        show device device_id [field][,field...]
+@show.command()
+@click.pass_context
+@click.argument('view_id', type=click.INT, required=False)
+def views(ctx: click.Context, view_id):
+    """
+    Show map views defined in the system.
+    Examples:
+        show views          -- list all views defined in the system
+        show views NNN      -- prints parameters that define the view with id=NNNN.
+                               This data can not be used to export/import views at this time.
+    """
+    api: API = ctx.obj['api']
+    if not view_id:
+        list_views(api)
+        return
+    response = api.get_views(view_id)
+    print(json.dumps({k: v for k, v in response.items() if k not in VIEW_DROP_KEYS}, indent=4))
 
-        Examples:
 
-            show device 159
-            show device 159 tags
-            show device 159 id,generation,boxDescr,tags
-        """
-        if not arg:
-            print('ERROR: at least one argument (device id) is required')
-            return
-        arg_list = arg.split()
-        dev_id = arg_list[0]
+@show.command()
+@click.pass_context
+@click.argument('device_id', type=click.INT, required=True)
+@click.argument('field', nargs=-1)
+def device(ctx: click.Context, device_id, field) -> None:
+    """
+    Inspect device identified by its device ID
+    """
+    api: API = ctx.obj['api']
+    response = api.get_device_json(device_id)
+    dev = json.loads(response.content)
+    if field:
+        print(json.dumps({x: dev.get(x, {}) for x in field}, indent=4))
+    else:
+        print(json.dumps(dev, indent=4))
 
-        if len(arg_list) > 1:
-            fields = arg_list[1].split(',')
-        else:
-            fields = None
 
-        request = 'v2/ui/net/{0}/devices/{1}'.format(self.netid, dev_id)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, data={'action': 'status'}, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            status = response.status_code
-            if status != 200:
-                print(self.get_error(json.loads(response.content)))
-            else:
-                # resp_dict = json.loads(response.content)
-                dev = json.loads(response.content)
-                if fields is not None:
-                    print(json.dumps({x: dev.get(x, {}) for x in fields}, indent=4))
-                else:
-                    print(json.dumps(dev, indent=4))
+def update_column_width(obj: Dict[str, str], column_name: str, col_wid_dict: Dict[str, int]) -> None:
+    w = col_wid_dict.get(column_name, 0)
+    txt = str(obj.get(column_name, ''))
+    w = max(w, len(txt))
+    col_wid_dict[column_name] = w
+
+
+def convert_obj(obj: dict, columns: List[str]) -> dict:
+    new_obj = obj.copy()
+    # fill in required columns that may be missing in the object
+    for col in columns:
+        if col not in new_obj:
+            new_obj[col] = ''
+    updated_at = float(obj['updatedAt'])
+    if updated_at == 0:
+        new_obj['updatedAt'] = '--'
+    else:
+        new_obj['updatedAt'] = convert_updated_at(updated_at) + ' ago'
+    return new_obj
+
+
+def convert_updated_at(updated_at_ms: float) -> str:
+    updated_at_sec = updated_at_ms / 1000.0
+    value = datetime.datetime.fromtimestamp(updated_at_sec)
+    delta = datetime.datetime.now() - value
+    return str(delta - datetime.timedelta(microseconds=delta.microseconds))
+
+
+@show.command()
+@click.pass_context
+def index(ctx: click.Context) -> None:
+    """
+    List NsgQL indexes and their cardinality
+    """
+    api: API = ctx.obj['api']
+    response = api.get_index()
+
+    ordered_columns = ['table', 'column', 'suffix', 'type', 'cardinality', 'redisKey', 'updatedAt']
+    title: Dict[str, str] = {'table': 'table',
+                             'column': 'column',
+                             'suffix': 'ext',
+                             'redisKey': 'redis',
+                             'type': 'type',
+                             'cardinality': 'cardinality',
+                             'updatedAt': 'updatedAt'}
+    resp = json.loads(response.content)
+    column_width: Dict[str, int] = {}
+    for column_name in title:
+        update_column_width(title, column_name, column_width)
+    for row in resp:
+        converted = convert_obj(row, ordered_columns)
+        for column_name in ordered_columns:
+            update_column_width(converted, column_name, column_width)
+    # assemble format string
+    table_columns = []
+    for column_name in ordered_columns:
+        table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
+    format_str = u' | '.join(table_columns)
+    title_line = format_str.format(title)
+    print(title_line)
+    print('-' * len(title_line))
+    counter = 0
+    for row in resp:
+        converted = convert_obj(row, ordered_columns)
+        print(format_str.format(converted))
+        counter += 1
+    print('-' * len(title_line))
+    print('Total: {}'.format(counter))
+
+
+@show.command()
+@click.pass_context
+def uuid(ctx: click.Context) -> None:
+    """
+    Print NSG cluster uuid
+    """
+    api: API = ctx.obj['api']
+    print(api.get_status()['uuid'])
+
+

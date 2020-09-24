@@ -7,8 +7,13 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import json
+import click
+import os
+import sys
 
-from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands, api, show, search
+from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands, show, search
+from nsgcli.api import API
+from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
@@ -17,7 +22,6 @@ TIME_FORMAT_ISO_LOCAL = 'iso_local'
 # SHOW_ARGS = ['version', 'uuid']
 CACHE_ARGS = ['clear', 'refresh']
 MAKE_ARGS = ['views', 'variables', 'maps', 'tags']
-RELOAD_ARGS = ['config', 'devices', 'clusters']
 RESTART_ARGS = ['tsdb', 'monitor']
 CLUSTER_ARGS = ['status', 'summary', 'os', 'jvm', 'tsdb', 'python', 'c3p0']
 SERVER_ARGS = ['pause', 'status']
@@ -26,10 +30,48 @@ FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start']
 HUD_ARGS = ['reset']
-NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic schema
+NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
 
-class NsgCLI(sub_command.SubCommand, object):
+@click.group(context_settings={})
+@click.pass_context
+@click.option('--base-url')
+@click.option('--token')
+@click.option('-L', '--local', 'time_format', flag_value=TIME_FORMAT_ISO_LOCAL, default=True, help="report timestamps in local timezone")
+@click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC, help="report timestamps in UTC")
+@click.option('--region')
+@click.option('--netid', default='1')
+def cli(ctx, base_url, token, time_format, region, netid):
+    if not base_url:
+        base_url = os.getenv('NSG_SERVICE_URL')
+    if not base_url:
+        print('Must specify --base-url or set $NSG_SERVICE_URL', sys.stderr)
+        sys.exit(1)
+
+    base_url = base_url.rstrip('/ ')
+
+    args = {'base-url': base_url,
+            'token': token,
+            'time-format': time_format,
+            'region': region,
+            'netid': netid}
+
+    ctx.obj = args
+    ctx.obj['api'] = API(base_url=base_url, token=token, netid=netid, time_format=time_format)
+
+
+cli.add_command(show.show)
+
+
+@cli.command()
+@click.pass_context
+@click.argument('thing', type=click.Choice(['config', 'devices', 'clusters']))
+def reload(ctx, thing):
+    api: API = ctx.obj['api']
+    api.print_response(api.reload(thing))
+
+
+class NsgCLI(sub_command.SubCommand):
     def __init__(self, base_url=None, token=None, netid=1, region=None, time_format=TIME_FORMAT_MS):
         super(NsgCLI, self).__init__(base_url='', token='', net_id=1)
         self.base_url = base_url
@@ -76,18 +118,21 @@ class NsgCLI(sub_command.SubCommand, object):
 
     ##########################################################################################
     def do_show(self, arg):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_show(self):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         return sub_cmd.help()
 
     def complete_show(self, text, _line, _begidx, _endidx):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
@@ -153,16 +198,6 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_nsgql(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, NSGQL_ARGS)
-
-    ##########################################################################################
-    def do_reload(self, arg):
-        if arg not in RELOAD_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        request = 'v2/ui/net/{0}/actions/reload/{1}'.format(self.netid, arg)
-        response = self.basic_command(request)
-        if response is not None:
-            self.print_response(response)
 
     @staticmethod
     def help_reload():
@@ -378,10 +413,12 @@ class NsgCLI(sub_command.SubCommand, object):
             agent_name = args.pop(0)
             work_args = ' '.join(args)
         if not work_args:
-            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
+                                                   region=self.current_region)
             sub_cmd.cmdloop()
         else:
-            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
+                                                   region=self.current_region)
             sub_cmd.onecmd(work_args)
 
     def help_agent(self):

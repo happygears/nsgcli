@@ -21,9 +21,12 @@ setuptools.setup(name='nsgcli',
                  author_email='vadim@happygears.net',
                  license='Apache',
                  packages=setuptools.find_packages(),
-                 install_requires=[
-                     'urllib3', 'requests', 'typing', 'python-dateutil'
-                 ],
-                 scripts=['bin/nsgcli', 'bin/nsgql', 'bin/silence'],
                  include_package_data=True,
-                 zip_safe=False)
+                 install_requires=[
+                     'Click'
+                 ],
+                 entry_points='''
+                    [console_scripts]
+                    nsgcli=nsgcli.nsgcli_main:cli
+                 ''',
+                 )

@@ -47,7 +47,7 @@ def sizeof_fmt(num, suffix='B'):
     return "%.3f %s%s" % (num, 'Y', suffix)
 
 
-class SubCommand(cmd.Cmd, object):
+class SubCommand(cmd.Cmd):
     # prompt = "(sub_command) "
 
     def __init__(self, base_url, token, net_id, region=None):
