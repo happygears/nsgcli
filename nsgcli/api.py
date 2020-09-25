@@ -103,6 +103,20 @@ class API(object):
         request = 'v2/ping/net/{netid}/se'.format(netid=self.netid)
         return self.call('GET', request)
 
+    def index_command(self, command) -> requests.Response:
+        request = 'v2/ui/net/{netid}/actions/indexes/refresh'.format(netid=self.netid)
+        return self.call('GET', request)
+
+    def index_create(self, table, column, function) -> requests.Response:
+        request = 'v2/ui/net/{netid}/actions/indexes/create'.format(netid=self.netid)
+        return self.call(
+            'POST',
+            request,
+            data={
+                'table': table,
+                'column': column,
+                'function': function})
+
 
     def http_call_stream(self, method, uri, data, timeout, headers, stream) -> requests.Response:
         url = concatenate_url(self.base_url, uri)

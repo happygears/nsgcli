@@ -58,6 +58,7 @@ def cli(ctx, base_url, token, time_format, region, netid):
 
 cli.add_command(show.show)
 cli.add_command(agent_commands.agent)
+cli.add_command(index.index)
 
 
 @cli.command()
