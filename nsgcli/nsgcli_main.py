@@ -11,7 +11,7 @@ import click
 import os
 import sys
 
-from nsgcli import index, agent_commands, exec_commands, sub_command, show, search
+from nsgcli import index, agent, exec_commands, sub_command, show, search
 from nsgcli.api import API
 from nsgcli.response_formatter import TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC, TIME_FORMAT_MS
 
@@ -57,7 +57,7 @@ def cli(ctx, base_url, token, time_format, region, netid):
 
 
 cli.add_command(show.show)
-cli.add_command(agent_commands.agent)
+cli.add_command(agent.agent)
 cli.add_command(index.index)
 cli.add_command(search.search)
 
