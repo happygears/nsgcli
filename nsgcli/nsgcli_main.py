@@ -11,13 +11,9 @@ import click
 import os
 import sys
 
-from nsgcli import index, agent_commands, exec_commands, sub_command, snmp_commands, show, search
+from nsgcli import index, agent_commands, exec_commands, sub_command, show, search
 from nsgcli.api import API
-from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC
-
-TIME_FORMAT_MS = 'ms'
-TIME_FORMAT_ISO_UTC = 'iso_utc'
-TIME_FORMAT_ISO_LOCAL = 'iso_local'
+from nsgcli.response_formatter import TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC, TIME_FORMAT_MS
 
 # SHOW_ARGS = ['version', 'uuid']
 CACHE_ARGS = ['clear', 'refresh']
@@ -35,12 +31,12 @@ NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schem
 
 @click.group(context_settings={})
 @click.pass_context
-@click.option('--base-url')
-@click.option('--token')
-@click.option('-L', '--local', 'time_format', flag_value=TIME_FORMAT_ISO_LOCAL, default=True, help="report timestamps in local timezone")
-@click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC, help="report timestamps in UTC")
-@click.option('--region')
-@click.option('--netid', default='1')
+@click.option('--base-url', help="http://HOST:PORT of your NSG cluster API endpoint (defaults to $NSG_SERVICE_URL)")
+@click.option('--token', help="API token for access to NSG cluster")
+@click.option('-L', '--local', 'time_format', flag_value=TIME_FORMAT_ISO_LOCAL, default=True, help="Report timestamps in local timezone")
+@click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC, help="Report timestamps in UTC")
+@click.option('--region', help="Select region for agent commands")
+@click.option('--netid', default='1', help="Network ID. 1 is usually correct")
 def cli(ctx, base_url, token, time_format, region, netid):
     if not base_url:
         base_url = os.getenv('NSG_SERVICE_URL')
@@ -57,18 +53,33 @@ def cli(ctx, base_url, token, time_format, region, netid):
             'netid': netid}
 
     ctx.obj = args
-    ctx.obj['api'] = API(base_url=base_url, token=token, netid=netid, time_format=time_format)
+    ctx.obj['api'] = API(base_url=base_url, token=token, netid=netid, time_format=time_format, region=region)
 
 
 cli.add_command(show.show)
+cli.add_command(agent_commands.agent)
 
 
 @cli.command()
 @click.pass_context
 @click.argument('thing', type=click.Choice(['config', 'devices', 'clusters']))
-def reload(ctx, thing):
+def reload(ctx: click.Context, thing: click.STRING):
+    """Send a request to NSG to reload something"""
     api: API = ctx.obj['api']
     api.print_response(api.reload(thing))
+
+
+@cli.command()
+@click.pass_context
+def ping(ctx: click.Context):
+    """
+    Test server status with '/ping' API call
+
+    "ping" NetSpyGlass server this cli client connects to. This returns "ok" if the server is up and running
+    """
+    api: API = ctx.obj['api']
+    print(api.ping_server().content.decode(), end='')
+
 
 
 class NsgCLI(sub_command.SubCommand):
@@ -88,52 +99,6 @@ class NsgCLI(sub_command.SubCommand):
         else:
             self.prompt = ' [' + self.current_region + '] > '
         return self.prompt
-
-    @staticmethod
-    def summary():
-        print()
-        print('Type "help" to get list of commands; "help command" returns more details about selected command.')
-        print('Typing "command" with no arguments executes it or enters this commands context.')
-        print('"Tab" autocompletes and to exit, enter "quit", "q" or "Ctrl-D" at the prompt.')
-
-    ##########################################################################################
-    def do_region(self, arg):
-        """Set the region; all subsequent commands will execute on the agents in the given region"""
-        self.current_region = arg
-        self.make_prompt()
-
-    ##########################################################################################
-    def do_ping(self, _):
-        """Test server status with '/ping' API call
-
-        "ping" NetSpyGlass server this cli client connects to. This returns "ok" if the server is up and running
-        """
-        request = 'v2/ping/net/{0}/se'.format(self.netid)
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            print(response.content)
-
-    ##########################################################################################
-    def do_show(self, arg):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
-                                    region=self.current_region)
-        if arg:
-            sub_cmd.onecmd(arg)
-        else:
-            sub_cmd.cmdloop()
-
-    def help_show(self):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
-                                    region=self.current_region)
-        return sub_cmd.help()
-
-    def complete_show(self, text, _line, _begidx, _endidx):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
-                                    region=self.current_region)
-        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
     def do_search(self, arg):

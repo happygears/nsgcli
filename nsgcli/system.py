@@ -15,6 +15,9 @@ from nsgcli.api import API
 @click.group()
 @click.pass_context
 def system(_: click.Context) -> None:
+    """
+    Root of a family of system inspection commands
+    """
     pass
 
 
@@ -93,6 +96,7 @@ def cpu(ctx: click.Context):
         ['name', 'cpuUsage', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
         api.get_cluster_status())
 
+
 @system.command()
 @click.pass_context
 def memory(ctx: click.Context) -> None:
@@ -160,6 +164,7 @@ def redis(ctx: click.Context):
         'SELECT device as server,redisErrorsRate,redisOOMErrorsRate FROM redisErrorsRate ORDER BY device')
     api.response_formatter.print_result_as_table(response)
 
+
 @system.command()
 @click.pass_context
 def agent_command_executor(ctx: click.Context) -> None:
@@ -168,7 +173,6 @@ def agent_command_executor(ctx: click.Context) -> None:
         'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
         'FROM poolSize ORDER BY device')
     api.response_formatter.print_result_as_table(response)
-
 
 
 def print_cluster_vars(formatter, names, cluster_status):

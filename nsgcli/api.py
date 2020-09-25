@@ -10,7 +10,7 @@ import copy
 import click
 import json
 import requests
-from typing import Optional, Any
+from typing import Optional, Any, List
 from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_MS
 
 
@@ -20,6 +20,7 @@ class API(object):
         self.base_url = kwargs['base_url']
         self.netid = kwargs.get('netid', 1)
         self.token = kwargs.get('token')
+        self.region = kwargs.get('region')
         self.response_formatter = ResponseFormatter(kwargs.get('time_format', TIME_FORMAT_MS))
 
     def get_status(self) -> Any:
@@ -46,8 +47,43 @@ class API(object):
         request = 'v2/ui/net/{netid}/devices/{device_id}'.format(netid=self.netid, device_id=device_id)
         return self.call('GET', request)
 
-    # TODO(colin): it is very un-REST-ful to have a GET endpoint used for its effect, not its value
-    def reload(self, thing: str):
+    # TODO(colin) possibly use command
+    def snmp(self, agent: str, cmd: str, address: str, oid: str, timeout: int) -> requests.Response:
+        request = 'v2/nsg/cluster/net/{netid}/exec/{cmd}'.format(netid=self.netid, cmd=cmd)
+        return self.call(
+            'GET',
+            request,
+            data={
+                'args': ' '.join([agent, address, oid, str(timeout)]),
+                'region': self.region},
+            headers={'Accept-Encoding': ''},
+            timeout=7200
+        )
+
+    # TODO(colin) can shift to command
+    def tail(self, agent: str, lines: int, logfile: str) -> requests.Response:
+        request = 'v2/nsg/cluster/net/{netid}/exec/tail'.format(netid=self.netid)
+        return self.call(
+            'GET',
+            request,
+            data={
+                'args': ' '.join([agent, str(lines), logfile]),
+                'region': self.region},
+            headers={'Accept-Encoding': ''},
+        )
+
+    def command(self, agent: str, command: str, args: List[str]):
+        request = 'v2/nsg/cluster/net/{netid}/exec/{command}'.format(netid=self.netid, command=command)
+        return self.call(
+            'GET',
+            request,
+            data={
+                'args': ' '.join(args),
+                'region': self.region},
+            headers={'Accept-Encoding': ''},
+        )
+
+    def reload(self, thing: str) -> requests.Response:
         request = 'v2/ui/net/{netid}/actions/reload/{thing}'.format(netid=self.netid, thing=thing)
         return self.call('GET', request)
 
@@ -63,11 +99,16 @@ class API(object):
             self.call('POST', request, data={'targets': [{'nsgql': query, 'format': 'table'}]},
                       stream=True).content)[0]
 
-    def http_call_stream(self, method, uri, data, timeout, headers, stream):
+    def ping_server(self) -> requests.Response:
+        request = 'v2/ping/net/{netid}/se'.format(netid=self.netid)
+        return self.call('GET', request)
+
+
+    def http_call_stream(self, method, uri, data, timeout, headers, stream) -> requests.Response:
         url = concatenate_url(self.base_url, uri)
         return self.make_call(url, method, data, timeout, headers=headers, stream=stream)
 
-    def make_call(self, url, method, data, timeout, headers, stream):
+    def make_call(self, url, method, data, timeout, headers, stream) -> requests.Response:
         hs = {}
         if headers:
             hs.update(headers)
@@ -121,6 +162,24 @@ class API(object):
             return response.get('error', str(response))
         else:
             return str(response)
+
+    def transform_remote_command_response_stream(self, response_generator):
+        """
+        the server sends objects as JSON array. Inside of the array, each item
+        occupies one line. Skip array start and end ( [ and ] ) and deserialize each
+        line separately
+
+        :param response_generator:  Response object returned by the requests 'get' or 'post' call
+        :return: generator that yields lines
+        """
+        for line in response_generator.iter_lines(decode_unicode=True):
+            line = line.strip('[]')
+            if not line:
+                continue
+            o = json.loads(line)
+            if self.is_error(o):
+                raise click.ClickException(o.get('error', o))
+            yield o
 
 
 def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
@@ -182,28 +241,3 @@ def concatenate_url(base_url, uri_path):
         return base_url + uri_path
     else:
         return base_url + '/' + uri_path
-
-
-def transform_remote_command_response_stream(response_generator):
-    """
-    the server sends objects as JSON array. Inside of the array, each item
-    occupies one line. Skip array start and end ( [ and ] ) and deserialize each
-    line separately
-
-    :param response_generator:  Response object returned by the requests 'get' or 'post' call
-    :return: generator that yields lines
-    """
-    # print(response_generator.headers)
-
-    for line in response_generator.iter_lines(decode_unicode=True):
-        # print('####' + line)
-
-        if not line or line.strip() in ['[', ']']:
-            continue
-        if line[0] == '[':
-            line = line[1:]
-
-        try:
-            yield json.loads(line)
-        except Exception as e:
-            print('{0} : {1}'.format(e, line))

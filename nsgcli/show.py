@@ -19,6 +19,7 @@ import nsgcli.system
 @click.group()
 @click.pass_context
 def show(_: click.Context) -> None:
+    '''Root of a family of cluster inspection commands'''
     pass
 
 @show.command()

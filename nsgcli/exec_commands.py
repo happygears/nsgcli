@@ -9,12 +9,6 @@ This module implements subset of NetSpyGlass CLI commands
 import json
 from nsgcli import sub_command, api
 
-RESPONSE_FORMAT = """
-Source: {m[agent]} ({m[agentAddress]})
-Status: {m[status]}
-Output: 
-{m[output]}"""
-
 EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
 EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
 
