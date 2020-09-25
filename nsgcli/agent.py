@@ -7,7 +7,7 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import click
-import json
+
 
 from typing import List
 from nsgcli.api import API
@@ -158,7 +158,8 @@ def find(ctx: click.Context, address):
 
     Example: agent find 1.2.3.4
     """
-    common_command(ctx, 'find_agent', [address])
+    api: API = ctx.obj['ape']
+    api.common_command('find_agent', [address])
 
 
 @agent.command()
@@ -169,7 +170,8 @@ def restart(ctx: click.Context):
 
     Example:  agent agent_name restart
     """
-    common_command(ctx, 'restart_agent', [])
+    api: API = ctx.obj['api']
+    api.common_command('restart_agent', [])
 
 
 @agent.command()
@@ -183,12 +185,13 @@ def set_property(ctx: click.Context, key, value) -> None:
 
     agent <agent_name> set_property key [value]
     """
+    api: API = ctx.obj['api']
     args = [ctx.obj['target_agent']]
     if key:
         args.append(key)
     if value:
         args.append(value)
-    common_command(ctx, 'set_property', args)
+    api.common_command('set_property', args)
 
 
 @agent.command()
@@ -200,7 +203,8 @@ def measurements(ctx: click.Context) -> None:
 
     agent <agent_name> measurements
     """
-    common_command(ctx, 'measurements', [ctx.obj['target_agent']])
+    api: API = ctx.obj['api']
+    api.common_command('measurements', [ctx.obj['target_agent']])
 
 
 @agent.command()
@@ -213,7 +217,8 @@ def bulk_request(ctx: click.Context, device_id) -> None:
 
     agent <agent_name> bulk_request <device_ID>
     """
-    common_command(ctx, 'bulk_request', [ctx.obj['target_agent'], device_id])
+    api: API = ctx.obj['api']
+    api.common_command('bulk_request', [ctx.obj['target_agent'], device_id])
 
 
 @agent.command()
@@ -226,9 +231,10 @@ def probe_snmp(ctx: click.Context, address: str, polling_config: List[str]) -> N
 
     Example: agent agent_name probe_snmp <device_address> <snmp_conf_name_1> <snmp_conf_name_2> ...
     """
+    api: API = ctx.obj['api']
     args = [ctx.obj['target_agent'], address]
     args.extend(polling_config)
-    common_command(ctx, 'discover-snmp-access', args)
+    api.common_command('discover-snmp-access', args)
 
 
 def snmp_command(ctx: click.Context, command: str, address: str, oid: str, timeout: int):
@@ -243,24 +249,3 @@ def snmp_command(ctx: click.Context, command: str, address: str, oid: str, timeo
 def print_response(acr):
     for line in acr['response']:
         print('{0} | {1}'.format(acr['agent'], line))
-
-
-def common_command(ctx: click.Context, command: str, args: List[str], deduplicate_replies=True) -> None:
-    """
-    send command to agents and pick up replies. If hide_errors=True, only successful
-    replies are printed, otherwise all replies are printed.
-
-    If deduplicate_replies=True, duplicate replies are suppressed (e.g. when multiple agents
-    reply)
-    """
-    api = ctx.obj['api']
-    response = api.command(ctx.obj['target_agent'], command, args)
-    replies_seen = set()
-    with response:
-        for acr in api.transform_remote_command_response_stream(response):
-            acr_str = json.dumps(acr)
-            if deduplicate_replies:
-                if acr_str in replies_seen:
-                    continue
-                replies_seen.add(acr_str)
-            print_response(acr)

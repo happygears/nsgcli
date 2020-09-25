@@ -47,6 +47,43 @@ class API(object):
         request = 'v2/ui/net/{netid}/devices/{device_id}'.format(netid=self.netid, device_id=device_id)
         return self.call('GET', request)
 
+    def cache(self, op: str):
+        request = 'v2/ui/net/{netid}/actions/cache/{op}'.format(netid=self.netid, op=op)
+        return self.call('GET', request)
+
+    def make(self, thing: str):
+        request = 'v2/ui/net/{netid}/actions/make/{thing}'.format(netid=self.netid, thing=thing)
+        return self.call('GET', request)
+
+    def discover(self, op: str) -> requests.Response:
+        return self.call('GET', 'v2/nsg/discovery/net/{netid}/{op}'.format(netid=self.netid, op=op))
+
+    def hud(self, op: str) -> requests.Response:
+        return self.call('GET', 'v2/nsg/test/net/{netid}/hud/{op}'.format(netid=self.netid, op=op))
+
+    def nsgql_schema(self, op: str) -> requests.Response:
+        return self.call('GET', 'v2/ui/net/{netid}/actions/nsgqlschema/{op}'.format(netid=self.netid, op=op))
+
+    def restart(self, what: str) -> requests.Response:
+        return self.call('GET', 'v2/ui/net/{netid}/actions/{what}/reconnect'.format(netid=self.netid, what=what))
+
+    def expire(self, retention: float) -> requests.Response:
+        return self.call(
+            'GET',
+            'v2/ui/net/{netid}/actions/expire/variables'.format(netid=self.netid),
+            data={'retentionHrs': retention})
+
+    def debug(self, level: int, arg: str, time_min: int):
+        request = 'v2/nsg/test/net/{netid}/debug'.format(netid=self.netid)
+        return self.call(
+            'GET',
+            request,
+            data={
+                'level': level,
+                'time': time_min,
+                'arg': arg})
+
+
     # TODO(colin) possibly use command
     def snmp(self, agent: str, cmd: str, address: str, oid: str, timeout: int) -> requests.Response:
         request = 'v2/nsg/cluster/net/{netid}/exec/{cmd}'.format(netid=self.netid, cmd=cmd)
@@ -72,7 +109,20 @@ class API(object):
             headers={'Accept-Encoding': ''},
         )
 
-    def command(self, agent: str, command: str, args: List[str]):
+    def fping(self, address: str, args: List[str]) -> requests.Response:
+        request = 'v2/nsg/cluster/net/{netid}/exec/fping'.format(netid=self.netid)
+        return self.call(
+            'GET',
+            request,
+            data={
+                'address': address,
+                'region': self.region,
+                'args': ' '.join(args)
+            },
+            headers={'Accept-Encoding': ''},
+        )
+
+    def command(self, command: str, args: List[str]):
         request = 'v2/nsg/cluster/net/{netid}/exec/{command}'.format(netid=self.netid, command=command)
         return self.call(
             'GET',
@@ -160,6 +210,14 @@ class API(object):
         else:
             print(j['success'])
 
+    @staticmethod
+    def print_agent_response(acr, status=None):
+        if not status:
+            for line in acr['response']:
+                print('{0} | {1}'.format(acr['agent'], line))
+        else:
+            print('{0} | {1}'.format(acr['agent'], status))
+
     def is_error(self, x: Any) -> bool:
         if isinstance(x, list):
             return self.is_error(x[0])
@@ -176,6 +234,25 @@ class API(object):
             return response.get('error', str(response))
         else:
             return str(response)
+
+    def common_command(self, command: str, args: List[str], deduplicate_replies=True) -> None:
+        """
+        send command to agents and pick up replies. If hide_errors=True, only successful
+        replies are printed, otherwise all replies are printed.
+
+        If deduplicate_replies=True, duplicate replies are suppressed (e.g. when multiple agents
+        reply)
+        """
+        response = self.command(command, args)
+        replies_seen = set()
+        with response:
+            for acr in self.transform_remote_command_response_stream(response):
+                acr_str = json.dumps(acr)
+                if deduplicate_replies:
+                    if acr_str in replies_seen:
+                        continue
+                    replies_seen.add(acr_str)
+                self.print_agent_response(acr)
 
     def transform_remote_command_response_stream(self, response_generator):
         """

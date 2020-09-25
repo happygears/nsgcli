@@ -132,8 +132,6 @@ class SubCommand(cmd.Cmd):
         else:
             return str(response)
 
-
-    @staticmethod
     def print_agent_response(acr, status):
         try:
             if not status or status == 'ok':
@@ -144,6 +142,7 @@ class SubCommand(cmd.Cmd):
         except Exception as e:
             print(e)
             print(acr)
+
 
     def parse_status(self, acr):
         try:
