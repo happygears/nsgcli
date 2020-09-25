@@ -14,8 +14,6 @@ from nsgcli import index, agent, show, search, execute
 from nsgcli.api import API
 from nsgcli.response_formatter import TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC
 
-SERVER_ARGS = ['pause', 'status']
-
 
 @click.group(context_settings={})
 @click.pass_context

@@ -6,7 +6,6 @@ This module implements the NetSpyGlass API
 
 """
 
-import copy
 import click
 import json
 import requests
@@ -83,7 +82,6 @@ class API(object):
                 'time': time_min,
                 'arg': arg})
 
-
     # TODO(colin) possibly use command
     def snmp(self, agent: str, cmd: str, address: str, oid: str, timeout: int) -> requests.Response:
         request = 'v2/nsg/cluster/net/{netid}/exec/{cmd}'.format(netid=self.netid, cmd=cmd)
@@ -154,7 +152,7 @@ class API(object):
         return self.call('GET', request)
 
     def index_command(self, command) -> requests.Response:
-        request = 'v2/ui/net/{netid}/actions/indexes/refresh'.format(netid=self.netid)
+        request = 'v2/ui/net/{netid}/actions/indexes/{command}'.format(netid=self.netid, command=command)
         return self.call('GET', request)
 
     def index_create(self, table, column, function) -> requests.Response:
@@ -166,7 +164,6 @@ class API(object):
                 'table': table,
                 'column': column,
                 'function': function})
-
 
     def http_call_stream(self, method, uri, data, timeout, headers, stream) -> requests.Response:
         url = concatenate_url(self.base_url, uri)
@@ -271,60 +268,6 @@ class API(object):
             if self.is_error(o):
                 raise click.ClickException(o.get('error', o))
             yield o
-
-
-def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
-    """
-    Make NetSpyGlass JSON API call to execute query
-
-    :param base_url:     - this is 'http://host' or 'https://host'
-    :param method:       - GET, PUT or POST
-    :param uri_path:     - API call url without "http:/server" part and without any query string parameters
-    :param data:         - (a dictionary) this is the request data for PUT and POST requests
-                           or query string for GET requests
-    :param token:        - access token
-    :param timeout:      - timeout, seconds
-    :param headers:      - http request headers
-    :param stream:       - if True, return result as a stream (default=True)
-    """
-
-    return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers,
-                            stream=stream)
-
-
-def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, headers=None, stream=True):
-    """
-    returns a generator that yields tuples [http_code, line]
-    """
-    url = concatenate_url(base_url, uri_path)
-    if headers is None:
-        send_headers = {}
-    else:
-        send_headers = copy.copy(headers)
-    if token is not None:
-        send_headers['X-NSG-Auth-API-Token'] = token
-    return make_call(url, method, data, timeout, headers=send_headers, stream=stream)
-
-
-def make_call(url, method, data, timeout, headers, stream=False):
-    # timeout_obj = urllib3.Timeout(connect=timeout, read=timeout)
-
-    if method == 'GET':
-        response = requests.get(url, params=data, timeout=timeout, headers=headers, verify=False, stream=stream)
-    elif method == 'POST':
-        response = requests.post(url, json=data, timeout=timeout, headers=headers, verify=False, stream=stream)
-    elif method == 'PUT':
-        response = requests.put(url, data=data, timeout=timeout, headers=headers, verify=False)
-    else:
-        raise NotImplementedError('Invalid request method {0}'.format(method))
-    if response.encoding is None:
-        response.encoding = 'utf-8'
-    return response
-
-
-def make_socket_url(base_url, uri_path):
-    url = base_url.replace('/', '%2F').replace(':%2F%2F', '://')
-    return concatenate_url(url, uri_path)
 
 
 def concatenate_url(base_url, uri_path):

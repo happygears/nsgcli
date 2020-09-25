@@ -19,8 +19,9 @@ import nsgcli.system
 @click.group()
 @click.pass_context
 def show(_: click.Context) -> None:
-    '''Root of a family of cluster inspection commands'''
+    """Root of a family of cluster inspection commands"""
     pass
+
 
 @show.command()
 @click.pass_context
@@ -72,12 +73,12 @@ def list_views(api: API) -> None:
     API call status returns a dictionary that has an item 'status' with value that is
     also a dictionary. This makes parsing response harder
     """
-    status = api.get_status()
+    sta = api.get_status()
     format_nsg = '{0[id]:<4} {0[name]:<32} {0[type]:<12} {1:<20}'
     header = {'id': 'id', 'name': 'name', 'type': 'type'}
     print(format_nsg.format(header, 'updated_at'))
     print('-' * 60)
-    for view in status['views']:
+    for view in sta['views']:
         updated_at = transform_value('updatedAt', view['updatedAt'])
         print(format_nsg.format(view, updated_at))
 
@@ -93,7 +94,7 @@ def views(ctx: click.Context, view_id):
     Show map views defined in the system.
     Examples:
         show views          -- list all views defined in the system
-        show views NNN      -- prints parameters that define the view with id=NNNN.
+        show views N        -- prints parameters that define the view with id=N.
                                This data can not be used to export/import views at this time.
     """
     api: API = ctx.obj['api']
@@ -199,5 +200,3 @@ def uuid(ctx: click.Context) -> None:
     """
     api: API = ctx.obj['api']
     print(api.get_status()['uuid'])
-
-
