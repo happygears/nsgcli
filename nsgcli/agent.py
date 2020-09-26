@@ -104,9 +104,9 @@ def snmpget(ctx: click.Context, address: str, oid: str, timeout: int) -> None:
 @click.argument('timeout', required=False, type=click.INT, default=2000)
 def snmpwalk(ctx: click.Context, address: str, oid: str, timeout: int) -> None:
     """
-    Execute snmp GET command using agents in the currently selected region
+    Execute snmp WALK command using agents in the currently selected region
 
-    snmp_get <address> oid [timeout_ms]
+    snmp_walk <address> oid [timeout_ms]
     """
     snmp_command(ctx, 'snmpwalk', address, oid, timeout)
 
@@ -135,8 +135,8 @@ def tail(ctx: click.Context, lines, filename):
 @agent.command(context_settings={"ignore_unknown_options": True})
 @click.pass_context
 @click.argument('lines', type=click.INT)
-@click.argument('logfile', type=click.STRING)
-def log(ctx: click.Context, lines, logfile):
+@click.argument('filename', type=click.STRING)
+def log(ctx: click.Context, lines, filename):
     """
     retrieve agent's log file
 
@@ -145,7 +145,7 @@ def log(ctx: click.Context, lines, logfile):
     this command assumes standard directory structure on the agent where logs are
     located in /opt/nsg-agent/var/logs
     """
-    tail(ctx, lines, AGENT_LOG_DIR + '/' + logfile)
+    ctx.forward(tail, filename=AGENT_LOG_DIR + '/' + filename)
 
 
 @agent.command()
