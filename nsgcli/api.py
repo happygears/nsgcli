@@ -11,7 +11,6 @@ import json
 import requests
 from typing import Optional, Any, List
 from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_MS
-from nsgcli.silence_main import Silence
 
 
 class API(object):
@@ -157,37 +156,38 @@ class API(object):
             timeout=timeout
         ).json()
 
-    def update_silence(self, silence: Silence) -> object:
+    def update_silence(self, d: dict) -> dict:
         """
-        makes API call to add or update a Silence
+        makes API call to add or update a silence from a dictionary of attributes
         """
         request = '/v2/alerts/net/{network}/silences/'.format(network=self.network)
-        if silence.id:
-            request += str(silence.id)
-        return self.call(
+        if d.get('id'):
+            request += str(d['id'])
+        k = self.call(
             'POST',
             request,
-            data=silence.get_dict()
-        ).json()[0]
+            data=d
+        )
+        return k.json()[0]
 
-    def get_silence(self, silence_id: int) -> Silence:
+    def get_silence(self, silence_id: int) -> dict:
         """
         makes API call to get a Silence
         """
-        return Silence(self.call(
+        return self.call(
             'GET',
             '/v2/alerts/net/{network}/silences/{silence_id}'.format(network=self.network, silence_id=silence_id)
-        ).json()[0])
+        ).json()[0]
 
-    def get_silences(self) -> List[Silence]:
+    def get_silences(self) -> List[dict]:
         """
         makes API call to get all Silences
         :return:
         """
-        return [Silence(s) for s in self.call(
+        return self.call(
             'GET',
             '/v2/alerts/net/{network}/silences/'.format(network=self.network)
-        ).json()]
+        ).json()
 
     def ping_server(self) -> requests.Response:
         request = 'v2/ping/net/{network}/se'.format(network=self.network)
