@@ -11,6 +11,7 @@ import json
 import requests
 from typing import Optional, Any, List
 from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_MS
+from nsgcli.silence_main import Silence
 
 
 class API(object):
@@ -23,19 +24,19 @@ class API(object):
 
     def get_status(self) -> Any:
         request = 'v2/ui/net/{0}/status'.format(self.network)
-        return json.loads(self.call('GET', request).content)[0]
+        return self.call('GET', request).json()[0]
 
     def get_cluster_status(self) -> Any:
         request = 'v2/nsg/cluster/net/{network}/status'.format(network=self.network)
-        return json.loads(self.call('GET', request).content)
+        return self.call('GET', request).json()
 
     def get_views(self, view_id: Optional[int]) -> Any:
         request = 'v2/ui/net/{network}/views/{viewid}/map'.format(network=self.network, viewid=view_id)
-        return json.loads(self.call('GET', request).content)
+        return self.call('GET', request).json()
 
     def get_cache_data(self):
         request = 'v2/ui/net/{network}/actions/cache/list'.format(network=self.network)
-        return json.loads(self.call('GET', request).content)
+        return self.call('GET', request).json()
 
     def get_index(self):
         request = 'v2/ui/net/{network}/actions/indexes/list'.format(network=self.network)
@@ -148,14 +149,45 @@ class API(object):
         makes API call v2/query/net/{0}/data and returns the response.
         """
         request = "/v2/query/net/{network}/data/".format(network=self.network)
-        return json.loads(
-            self.call(
-                'POST',
-                request,
-                data={'targets': [{'nsgql': q, 'format': result_format} for q in queries]},
-                stream=True,
-                timeout=timeout
-            ).content)
+        return self.call(
+            'POST',
+            request,
+            data={'targets': [{'nsgql': q, 'format': result_format} for q in queries]},
+            stream=True,
+            timeout=timeout
+        ).json()
+
+    def update_silence(self, silence: Silence) -> object:
+        """
+        makes API call to add or update a Silence
+        """
+        request = '/v2/alerts/net/{network}/silences/'.format(network=self.network)
+        if silence.id:
+            request += str(silence.id)
+        return self.call(
+            'POST',
+            request,
+            data=silence.get_dict()
+        ).json()[0]
+
+    def get_silence(self, silence_id: int) -> Silence:
+        """
+        makes API call to get a Silence
+        """
+        return Silence(self.call(
+            'GET',
+            '/v2/alerts/net/{network}/silences/{silence_id}'.format(network=self.network, silence_id=silence_id)
+        ).json()[0])
+
+    def get_silences(self) -> List[Silence]:
+        """
+        makes API call to get all Silences
+        :return:
+        """
+        return [Silence(s) for s in self.call(
+            'GET',
+            '/v2/alerts/net/{network}/silences/'.format(network=self.network)
+        ).json()]
 
     def ping_server(self) -> requests.Response:
         request = 'v2/ping/net/{network}/se'.format(network=self.network)
@@ -198,7 +230,7 @@ class API(object):
 
         if response.status_code != 200:
             try:
-                payload = json.loads(response.content)
+                payload = response.json()
                 if 'error' in payload:
                     raise click.ClickException(f'{response.status_code} {payload["error"]}')
                 else:
@@ -211,7 +243,7 @@ class API(object):
     def print_response(self, response: requests.Response) -> None:
         if response.status_code != 200:
             print(response)
-        j = json.loads(response.content)
+        j = response.json()
         if self.is_error(j):
             print('ERROR: {0}'.format(self.get_error(j)))
         else:

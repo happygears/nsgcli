@@ -29,5 +29,6 @@ setuptools.setup(name='nsgcli',
                     [console_scripts]
                     nsgcli=nsgcli.nsgcli:cli
                     nsgql=nsgcli.nsgql:nsgql
+                    silence=nsgcli.silence:silence
                  ''',
                  )

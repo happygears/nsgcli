@@ -9,14 +9,138 @@
 # alert silence manipulation script
 #
 #
+from getpass import getpass
 
+import click
+import os
 import json
+import dateutil.parser
 from email.utils import formatdate
 
-from nsgcli import api
+from nsgcli.api import API
+
+
+@click.group()
+@click.option('--base-url',
+              help="http://HOST:PORT of your NSG cluster API endpoint (defaults to $NSG_SERVICE_URL)",
+              default=os.getenv('NSG_SERVICE_URL'))
+@click.option('--network', default='1', help="Network ID. 1 is usually correct")
+@click.option('--token', help="API token for access to NSG cluster")
+@click.option('--id', help="Silence ID, if known (used for update command)", type=click.INT)
+@click.option('--start',
+              help="""
+silence should start on this date and time. Various input formats are supported,
+examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with 
+time zone). See Python module `dateutil` for the detailed list of supported formats. 
+You can set the time zone, but if it is not specified, the time is assumed to be in local 
+time zone. If this parameter is not provided, the start time of the silence is "now". If 
+specified, the start time can be both in the future and in the past.""")
+@click.option('--expiration',
+              help="""
+silence expiration time, minutes. The silence stops at the time calculated as the start time plus expiration time.""")
+@click.option('--key', help='alert key to match')
+@click.option('--var_name', help='variable name to match')
+@click.option('--dev_id', help='device ID to match')
+@click.option('--dev_name', help='device name to match')
+@click.option('--index', help='component index to match')
+@click.option('--tags',
+              help="""
+a string that represents comma-separated list of tags to match. Tag can be defined either
+as 'Facet.word' or just 'Facet'. The latter is equivalent to matching 'Facet.*'. Tag
+can be prepended with '!' to indicate negation - alert matches if it does not have corresponding
+tag.""")
+@click.option('--reason', help="argument is a text string that describes the reason this silence is being added")
+@click.pass_context
+def silence(ctx: click.Context, base_url, network, token, id, start, expiration,
+            key, var_name, dev_id, dev_name, index, tags, reason) -> None:
+    """
+    This script can add, update and list alert silences
+
+    Examples:
+
+        the following command adds silence for alert 'busyCpuAlert' for device with id 212, any component and any tags:
+            silence.py add --var_name='busyCpuAlert' --dev_id=212
+
+        match alert by name and tag, for example silence all alerts for servers that belong to hbase cluster 'hbase0'
+        except those marked 'important':
+            silence.py add --var_name='busyCpuAlert' --tags='Explicit.hbase0, !Explicit.important'
+
+        use this command to list active silences:
+            silence.py list
+
+        The output looks like this:
+             id  | exp.time, min  |         created          |         updated          |                  match
+            ------------------------------------------------------------------------------------------------------------------------
+             8   |      60.0      | Mon Jun  8 19:50:15 2015 | Mon Jun  8 19:50:15 2015 | {u'varName': u'busyCpuAlert', u'tags': [], u'deviceId': 131, u'index': 0}
+
+        use this command to update expiration time on the existing silence (use silence Id returned by the 'list' command):
+            silence.py update --id=8 --expiration=120
+
+        use the following command to add silence that matches all alerts regardgess of their name, device,
+        component and tags (a 'catch all' silence):
+            silence.py add --var_name='.*'
+
+        use the following command to add silence that matches all alerts for given device
+            silence.py add --var_name='.*' --dev_id=212
+
+        specify start time with time zone:
+            silence.py add --start='2020-04-01 00:00:00 -0800' --var_name='.*' --dev_id=212
+
+        the following command adds silence that matches variable 'busyCpyAlert' for all devices with names that
+        match regular expression 'sjc1-rtr-.*'
+            silence.py add --var_name='busyCpuAlert' --dev_name='sjc1-rtr-.*'
+
+        override server address and port number settings
+            silence.py list --server=10.1.1.1 --port=9101
+    """
+    ctx.obj['api'] = API(base_url=base_url.rstrip('/ '), network=network, token=token)
+    ctx.obj['args'] = {
+        'id': id,
+        'start_time_ms': dateutil.parser.parse(start).timestamp() * 1000,
+        'expiration_ms': expiration * 60 * 1000,
+        'key': key,
+        'var_name': var_name,
+        'dev_id': dev_id,
+        'dev_name': dev_name,
+        'index': index,
+        'tags': tags,
+        'reason': reason,
+        'user': getpass.getuser()
+    }
+
+
+@silence.command()
+@click.pass_context
+def add(ctx: click.Context):
+    s = ctx.obj['api'].update_silence(Silence.from_arguments(ctx.obj['args']))
+    s.print_silence_header()
+    s.print_silence()
+
+
+@silence.command()
+@click.pass_context
+def update(ctx: click.Context):
+    api: API = ctx.obj['api']
+    args: dict = ctx.obj['args']
+    existing_silence = api.get_silence(args['id'])
+    updater = Silence.from_arguments(args)
+    existing_silence.merge(updater)
+    api.update_silence(existing_silence)
+    existing_silence.print_silence_header()
+    existing_silence.print_silence()
+
+@silence.command()
+@click.pass_context
+def list(ctx: click.Context):
+    api: API = ctx.obj['api']
+    Silence.print_silence_header()
+    for s in api.get_silences():
+        s.print_silence()
 
 
 class Silence:
+
+    SILENCE_PRINT_FORMAT = '{0:^4} | {1:^32} | {2:^14} | {3:^8} | {4:^40} | {5:^32} | {6:^32} | {7:^40}'
 
     def __init__(self, dd):
         """
@@ -43,6 +167,36 @@ class Silence:
             self.tags = tags_str
         else:
             self.tags = []
+
+    # NB: we can stop quoting the return type here after Python 3.10,
+    # or we could import 'annotations' from __future__
+
+    @staticmethod
+    def from_arguments(d: dict) -> 'Silence':
+        """
+        Assemble and return Silence object using data that has been provided on the command line
+
+        :return: Silence object
+        """
+        silence = Silence({})
+        if d['id'] > 0:
+            silence.id = d['id']
+        silence.start_time_ms = d['start_time_ms']
+        silence.expiration_time_ms = d['expiration_ms']
+        silence.key = d['key']
+        silence.var_name = d['var_name']
+        silence.device_id = d['dev_id']
+        silence.device_name = d['dev_name']
+        silence.index = d['index']
+        silence.user = d['user']
+        silence.reason = d['reason']
+
+        if d['tags']:
+            silence.tags = d['tags'].split(',')
+        else:
+            silence.tags = []
+
+        return silence
 
     def get_dict(self):
         silence = {
@@ -87,171 +241,18 @@ class Silence:
         if other.reason:
             self.reason = other.reason
 
-
-class NetSpyGlassAlertSilenceControl:
-    def __init__(self, base_url='', token='', netid=1, silence_id=0, expiration=0, user='', reason='',
-                 key='', var_name='', dev_id=0, dev_name='', index=0, tags='', start_time=0):
-        self.base_url = base_url
-        self.token = token
-        self.netid = netid
-        self.silence_id = silence_id
-        self.expiration = expiration
-        self.user = user
-        self.reason = reason
-        self.key = key
-        self.var_name = var_name
-        self.dev_id = dev_id
-        self.dev_name = dev_name
-        self.index = index
-        self.tags = tags
-        self.start_time = start_time
-        self.silence_print_format = '{0:^4} | {1:^32} | {2:^14} | {3:^8} | {4:^40} | {5:^32} | {6:^32} | {7:^40}'
-
-    def assemble_silence_data(self):
-        """
-        Assemble and return Silence object using data that has been provided on the command line
-
-        :return: Silence object
-        """
-        silence = Silence({})
-        if self.silence_id > 0:
-            silence.id = self.silence_id
-        silence.start_time_ms = self.start_time * 1000
-        silence.expiration_time_ms = self.expiration * 60 * 1000
-        silence.key = self.key
-        silence.var_name = self.var_name
-        silence.device_id = self.dev_id
-        silence.device_name = self.dev_name
-        silence.index = self.index
-        silence.user = self.user
-        silence.reason = self.reason
-
-        if self.tags:
-            silence.tags = self.tags.split(',')
-        else:
-            silence.tags = []
-
-        return silence
-
-    def print_silence_header(self):
-        print(self.silence_print_format.format('id', 'start', 'exp.time, min', 'user', 'reason', 'created', 'updated',
-                                               'match'))
+    @staticmethod
+    def print_silence_header():
+        print(Silence.SILENCE_PRINT_FORMAT.format('id', 'start', 'exp.time, min', 'user', 'reason', 'created',
+                                                  'updated', 'match'))
         print('{0:-<200}'.format('-'))
 
-    def print_silence(self, silence):
-        silence_dict = silence.get_dict()
-        id = silence.id
+    def print_silence(self):
+        silence_dict = self.get_dict()
         start_time = formatdate(silence.start_time_ms / 1000, localtime=True)
         exp_min = silence.expiration_time_ms / 1000 / 60
         created_at = formatdate(silence.created_at / 1000, localtime=True)
         updated_at = formatdate(silence.updated_at / 1000, localtime=True)
         match = silence_dict.get('match', '{}')
-        print(self.silence_print_format.format(id, start_time, exp_min, silence.user, silence.reason, created_at,
+        print(self.SILENCE_PRINT_FORMAT.format(self.id, start_time, exp_min, self.user, self.reason, created_at,
                                                updated_at, match))
-
-    def get_data(self, silence_id=None):
-        """
-        Make NetSpyGlass JSON API call to get all active silences or only silence with given id
-
-        :param silence_id: if of the silence to be retrieved, or None if all active silences should be retrieved
-        :return: a tuple (HTTP_STATUS, list) where the second item is list of Silence objects
-        """
-        request = '/v2/alerts/net/{0}/silences/'.format(self.netid)
-        if silence_id is not None and silence_id > 0:
-            request += str(silence_id)
-
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            status = response.status_code
-            if status != 200:
-                return status, response
-            else:
-                res = []
-                for dd in json.loads(response.content):
-                    silence = Silence(dd)
-                    res.append(silence)
-            return response.status_code, res
-
-    def post_data(self, silence):
-        """
-        Make NetSpyGlass JSON API call to add or update silence
-
-        :param silence:  Silence object
-        """
-        assert isinstance(silence, Silence)
-        request = '/v2/alerts/net/{0}/silences/'.format(self.netid)
-        if silence.id is not None and silence.id > 0:
-            request += str(silence.id)
-
-        try:
-            # serialized = json.dumps(silence.get_dict())
-            response = api.call(self.base_url, 'POST', request, token=self.token, data=silence.get_dict())
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, response.content
-
-    def add(self):
-        status, res = self.post_data(self.assemble_silence_data())
-        if status == 200:
-            response = json.loads(res)
-            self.print_silence_header()
-            self.print_silence(Silence(response[0]))
-            # print('Silence added successfully: id={0}'.format(response.get('id', 'unknown')))
-        elif status == 404:
-            print('Network not found, probably network id={0} is invalid. '
-                  'Use command line option --network(-n) to set correct network id'.format(self.netid))
-        else:
-            print(res)
-
-    def update(self):
-        status, res = self.get_data(self.silence_id)
-        if status == 200:
-            if not res:
-                print('Silence with id={0} does not exist'.format(self.silence_id))
-                return
-            existing_silence = res[0]
-            assert isinstance(existing_silence, Silence)
-            self.update_silence(existing_silence)
-        elif status == 404:
-            print('Network not found, probably network id={0} is invalid. '
-                  'Use command line option --network(-n) to set correct network id'.format(self.netid))
-        else:
-            print(res)
-
-    def update_silence(self, existing_silence):
-        silence = self.assemble_silence_data()
-        # update existing silence with new data
-        existing_silence.merge(silence)
-        status, res = self.post_data(existing_silence)
-        if status == 200:
-            response = json.loads(res)
-            self.print_silence_header()
-            self.print_silence(Silence(response[0]))
-        else:
-            print(res)
-
-    def list(self):
-        status, res = self.get_data()
-        if status == 200:
-            self.print_silence_header()
-            for silence in res:
-                self.print_silence(silence)
-        elif status == 404:
-            print('Network not found, probably network id={0} is invalid. '
-                  'Use command line option --network(-n) to set correct network id'.format(self.netid))
-        else:
-            print(res)
-
-    def run(self, command):
-        if command in ['add']:
-            self.add()
-        elif command in ['update']:
-            self.update()
-        elif command in ['list']:
-            self.list()
-        else:
-            print('Unknown command "{0}"'.format(command))
