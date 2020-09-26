@@ -25,8 +25,8 @@ from nsgcli.response_formatter import TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC
 @click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC,
               help="Report timestamps in UTC")
 @click.option('--region', help="Select region for agent commands")
-@click.option('--netid', default='1', help="Network ID. 1 is usually correct")
-def cli(ctx, base_url, token, time_format, region, netid):
+@click.option('--network', default='1', help="Network ID. 1 is usually correct")
+def cli(ctx, base_url, token, time_format, region, network):
     if not base_url:
         base_url = os.getenv('NSG_SERVICE_URL')
     if not base_url:
@@ -34,7 +34,7 @@ def cli(ctx, base_url, token, time_format, region, netid):
         sys.exit(1)
 
     base_url = base_url.rstrip('/ ')
-    ctx.obj = {'api': API(base_url=base_url, token=token, netid=netid, time_format=time_format, region=region)}
+    ctx.obj = {'api': API(base_url=base_url, token=token, network=network, time_format=time_format, region=region)}
 
 
 cli.add_command(show.show)

@@ -27,19 +27,19 @@ from nsgcli.response_formatter import TIME_FORMAT_ISO_UTC, TIME_FORMAT_ISO_LOCAL
               help="Report timestamps in local timezone")
 @click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC,
               help="Report timestamps in UTC")
-@click.option('--netid', default=1, help="Network ID. 1 is usually correct", type=click.INT)
+@click.option('--network', default=1, help="Network ID. 1 is usually correct", type=click.INT)
 @click.argument('query', nargs=-1)
-def nsgql(base_url: str, format_: str, raw: bool, token: str, timeout: int, time_format: str, netid: int, query: List[str]):
+def nsgql(base_url: str, format_: str, raw: bool, token: str, timeout: int, time_format: str, network: int, query: List[str]):
     api = API(
         base_url=base_url.rstrip('/ '),
         token=token,
         time_format=time_format,
-        netid=netid
+        network=network
     )
     # I don't love the quoting semantics here, because if a string in the query
     # has a ; in it, the split will ruin the query, but this is the way it
     # used to work.  One way of deprecating this would be to fold nsgql
-    # queries into nsgcli, rename nsgcli to query, and have a 'query' subcommand
+    # queries into nsgcli, rename nsgcli to nsg, and have a 'query' subcommand
     # of nsg that would have more solid quoting behavior.
     execute(api, ' '.join(query).split(';'), raw, format_, timeout)
 

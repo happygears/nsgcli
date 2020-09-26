@@ -16,63 +16,63 @@ from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_MS
 class API(object):
     def __init__(self, **kwargs):
         self.base_url = kwargs['base_url']
-        self.netid = kwargs.get('netid', 1)
+        self.network = kwargs.get('network', 1)
         self.token = kwargs.get('token')
         self.region = kwargs.get('region')
         self.response_formatter = ResponseFormatter(kwargs.get('time_format', TIME_FORMAT_MS))
 
     def get_status(self) -> Any:
-        request = 'v2/ui/net/{0}/status'.format(self.netid)
+        request = 'v2/ui/net/{0}/status'.format(self.network)
         return json.loads(self.call('GET', request).content)[0]
 
     def get_cluster_status(self) -> Any:
-        request = 'v2/nsg/cluster/net/{netid}/status'.format(netid=self.netid)
+        request = 'v2/nsg/cluster/net/{network}/status'.format(network=self.network)
         return json.loads(self.call('GET', request).content)
 
     def get_views(self, view_id: Optional[int]) -> Any:
-        request = 'v2/ui/net/{netid}/views/{viewid}/map'.format(netid=self.netid, viewid=view_id)
+        request = 'v2/ui/net/{network}/views/{viewid}/map'.format(network=self.network, viewid=view_id)
         return json.loads(self.call('GET', request).content)
 
     def get_cache_data(self):
-        request = 'v2/ui/net/{netid}/actions/cache/list'.format(netid=self.netid)
+        request = 'v2/ui/net/{network}/actions/cache/list'.format(network=self.network)
         return json.loads(self.call('GET', request).content)
 
     def get_index(self):
-        request = 'v2/ui/net/{netid}/actions/indexes/list'.format(netid=self.netid)
+        request = 'v2/ui/net/{network}/actions/indexes/list'.format(network=self.network)
         return self.call('GET', request)
 
     def get_device_json(self, device_id: int):
-        request = 'v2/ui/net/{netid}/devices/{device_id}'.format(netid=self.netid, device_id=device_id)
+        request = 'v2/ui/net/{network}/devices/{device_id}'.format(network=self.network, device_id=device_id)
         return self.call('GET', request)
 
     def cache(self, op: str):
-        request = 'v2/ui/net/{netid}/actions/cache/{op}'.format(netid=self.netid, op=op)
+        request = 'v2/ui/net/{network}/actions/cache/{op}'.format(network=self.network, op=op)
         return self.call('GET', request)
 
     def make(self, thing: str):
-        request = 'v2/ui/net/{netid}/actions/make/{thing}'.format(netid=self.netid, thing=thing)
+        request = 'v2/ui/net/{network}/actions/make/{thing}'.format(network=self.network, thing=thing)
         return self.call('GET', request)
 
     def discover(self, op: str) -> requests.Response:
-        return self.call('GET', 'v2/nsg/discovery/net/{netid}/{op}'.format(netid=self.netid, op=op))
+        return self.call('GET', 'v2/nsg/discovery/net/{network}/{op}'.format(network=self.network, op=op))
 
     def hud(self, op: str) -> requests.Response:
-        return self.call('GET', 'v2/nsg/test/net/{netid}/hud/{op}'.format(netid=self.netid, op=op))
+        return self.call('GET', 'v2/nsg/test/net/{network}/hud/{op}'.format(network=self.network, op=op))
 
     def nsgql_schema(self, op: str) -> requests.Response:
-        return self.call('GET', 'v2/ui/net/{netid}/actions/nsgqlschema/{op}'.format(netid=self.netid, op=op))
+        return self.call('GET', 'v2/ui/net/{network}/actions/nsgqlschema/{op}'.format(network=self.network, op=op))
 
     def restart(self, what: str) -> requests.Response:
-        return self.call('GET', 'v2/ui/net/{netid}/actions/{what}/reconnect'.format(netid=self.netid, what=what))
+        return self.call('GET', 'v2/ui/net/{network}/actions/{what}/reconnect'.format(network=self.network, what=what))
 
     def expire(self, retention: float) -> requests.Response:
         return self.call(
             'GET',
-            'v2/ui/net/{netid}/actions/expire/variables'.format(netid=self.netid),
+            'v2/ui/net/{network}/actions/expire/variables'.format(network=self.network),
             data={'retentionHrs': retention})
 
     def debug(self, level: int, arg: str, time_min: int):
-        request = 'v2/nsg/test/net/{netid}/debug'.format(netid=self.netid)
+        request = 'v2/nsg/test/net/{network}/debug'.format(network=self.network)
         return self.call(
             'GET',
             request,
@@ -83,7 +83,7 @@ class API(object):
 
     # TODO(colin) possibly use command
     def snmp(self, agent: str, cmd: str, address: str, oid: str, timeout: int) -> requests.Response:
-        request = 'v2/nsg/cluster/net/{netid}/exec/{cmd}'.format(netid=self.netid, cmd=cmd)
+        request = 'v2/nsg/cluster/net/{network}/exec/{cmd}'.format(network=self.network, cmd=cmd)
         return self.call(
             'GET',
             request,
@@ -96,7 +96,7 @@ class API(object):
 
     # TODO(colin) can shift to command
     def tail(self, agent: str, lines: int, logfile: str) -> requests.Response:
-        request = 'v2/nsg/cluster/net/{netid}/exec/tail'.format(netid=self.netid)
+        request = 'v2/nsg/cluster/net/{network}/exec/tail'.format(network=self.network)
         return self.call(
             'GET',
             request,
@@ -107,7 +107,7 @@ class API(object):
         )
 
     def fping(self, address: str, args: List[str]) -> requests.Response:
-        request = 'v2/nsg/cluster/net/{netid}/exec/fping'.format(netid=self.netid)
+        request = 'v2/nsg/cluster/net/{network}/exec/fping'.format(network=self.network)
         return self.call(
             'GET',
             request,
@@ -120,7 +120,7 @@ class API(object):
         )
 
     def command(self, command: str, args: List[str]):
-        request = 'v2/nsg/cluster/net/{netid}/exec/{command}'.format(netid=self.netid, command=command)
+        request = 'v2/nsg/cluster/net/{network}/exec/{command}'.format(network=self.network, command=command)
         return self.call(
             'GET',
             request,
@@ -131,7 +131,7 @@ class API(object):
         )
 
     def reload(self, thing: str) -> requests.Response:
-        request = 'v2/ui/net/{netid}/actions/reload/{thing}'.format(netid=self.netid, thing=thing)
+        request = 'v2/ui/net/{network}/actions/reload/{thing}'.format(network=self.network, thing=thing)
         return self.call('GET', request)
 
     def call(self, method, uri, data=None, timeout=180, headers=None, stream=True):
@@ -147,7 +147,7 @@ class API(object):
         """
         makes API call v2/query/net/{0}/data and returns the response.
         """
-        request = "/v2/query/net/{netid}/data/".format(netid=self.netid)
+        request = "/v2/query/net/{network}/data/".format(network=self.network)
         return json.loads(
             self.call(
                 'POST',
@@ -158,15 +158,15 @@ class API(object):
             ).content)
 
     def ping_server(self) -> requests.Response:
-        request = 'v2/ping/net/{netid}/se'.format(netid=self.netid)
+        request = 'v2/ping/net/{network}/se'.format(network=self.network)
         return self.call('GET', request)
 
     def index_command(self, command) -> requests.Response:
-        request = 'v2/ui/net/{netid}/actions/indexes/{command}'.format(netid=self.netid, command=command)
+        request = 'v2/ui/net/{network}/actions/indexes/{command}'.format(network=self.network, command=command)
         return self.call('GET', request)
 
     def index_create(self, table, column, function) -> requests.Response:
-        request = 'v2/ui/net/{netid}/actions/indexes/create'.format(netid=self.netid)
+        request = 'v2/ui/net/{network}/actions/indexes/create'.format(network=self.network)
         return self.call(
             'POST',
             request,
