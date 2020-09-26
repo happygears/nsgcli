@@ -28,5 +28,6 @@ setuptools.setup(name='nsgcli',
                  entry_points='''
                     [console_scripts]
                     nsgcli=nsgcli.nsgcli:cli
+                    nsgql=nsgcli.nsgql:nsgql
                  ''',
                  )

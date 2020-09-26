@@ -158,7 +158,7 @@ def find(ctx: click.Context, address):
 
     Example: agent find 1.2.3.4
     """
-    api: API = ctx.obj['ape']
+    api: API = ctx.obj['api']
     api.common_command('find_agent', [address])
 
 

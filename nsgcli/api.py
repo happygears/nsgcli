@@ -15,7 +15,6 @@ from nsgcli.response_formatter import ResponseFormatter, TIME_FORMAT_MS
 
 class API(object):
     def __init__(self, **kwargs):
-        self.args = kwargs
         self.base_url = kwargs['base_url']
         self.netid = kwargs.get('netid', 1)
         self.token = kwargs.get('token')
@@ -138,14 +137,25 @@ class API(object):
     def call(self, method, uri, data=None, timeout=180, headers=None, stream=True):
         return self.http_call_stream(method, uri, data, timeout, headers, stream)
 
-    def nsgql_call(self, query) -> object:
+    def nsgql_query(self, query: str, result_format='table') -> object:
+        """
+        makes API call v2/query/net/{0}/data and returns the response.
+        """
+        return self.nsgql_multiquery([query], result_format)[0]
+
+    def nsgql_multiquery(self, queries: List[str], result_format, timeout=180) -> List[object]:
         """
         makes API call v2/query/net/{0}/data and returns the response.
         """
         request = "/v2/query/net/{netid}/data/".format(netid=self.netid)
         return json.loads(
-            self.call('POST', request, data={'targets': [{'nsgql': query, 'format': 'table'}]},
-                      stream=True).content)[0]
+            self.call(
+                'POST',
+                request,
+                data={'targets': [{'nsgql': q, 'format': result_format} for q in queries]},
+                stream=True,
+                timeout=timeout
+            ).content)
 
     def ping_server(self) -> requests.Response:
         request = 'v2/ping/net/{netid}/se'.format(netid=self.netid)

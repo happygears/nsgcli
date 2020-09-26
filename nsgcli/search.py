@@ -32,4 +32,4 @@ def device(ctx: click.Context, match):
                 OR SerialNumber = "{match}"
                 OR boxDescr REGEXP ".*{match}.*")
                 AND Role NOT IN ("Cluster", "SimulatedNode")'''
-    api.response_formatter.print_result_as_table(api.nsgql_call(query))
+    api.response_formatter.print_result_as_table(api.nsgql_query(query))

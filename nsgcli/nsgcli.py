@@ -19,8 +19,7 @@ from nsgcli.response_formatter import TIME_FORMAT_ISO_LOCAL, TIME_FORMAT_ISO_UTC
 @click.pass_context
 @click.option('--base-url',
               help="http://HOST:PORT of your NSG cluster API endpoint (defaults to $NSG_SERVICE_URL)")
-@click.option('--token',
-              help="API token for access to NSG cluster")
+@click.option('--token', help="API token for access to NSG cluster")
 @click.option('-L', '--local', 'time_format', flag_value=TIME_FORMAT_ISO_LOCAL, default=True,
               help="Report timestamps in local timezone")
 @click.option('-U', '--utc', 'time_format', flag_value=TIME_FORMAT_ISO_UTC,
@@ -35,15 +34,7 @@ def cli(ctx, base_url, token, time_format, region, netid):
         sys.exit(1)
 
     base_url = base_url.rstrip('/ ')
-
-    args = {'base-url': base_url,
-            'token': token,
-            'time-format': time_format,
-            'region': region,
-            'netid': netid}
-
-    ctx.obj = args
-    ctx.obj['api'] = API(base_url=base_url, token=token, netid=netid, time_format=time_format, region=region)
+    ctx.obj = {'api': API(base_url=base_url, token=token, netid=netid, time_format=time_format, region=region)}
 
 
 cli.add_command(show.show)

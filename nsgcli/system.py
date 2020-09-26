@@ -101,7 +101,7 @@ def cpu(ctx: click.Context):
 @click.pass_context
 def memory(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
             'SELECT device as server,component,NsgRegion,systemMemFreePercent,systemMemTotal FROM systemMemTotal '
             'WHERE systemMemFreePercent NOT NULL AND systemMemTotal NOT NULL ORDER BY device')
     api.response_formatter.print_result_as_table(response)
@@ -111,7 +111,7 @@ def memory(ctx: click.Context) -> None:
 @click.pass_context
 def jvm(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,NsgRegion,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
         'FROM jvmMemTotal ORDER BY device')
     api.response_formatter.print_result_as_table(response)
@@ -121,7 +121,7 @@ def jvm(ctx: click.Context) -> None:
 @click.pass_context
 def python(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,NsgRegion,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
     api.response_formatter.print_result_as_table(response)
 
@@ -130,7 +130,7 @@ def python(ctx: click.Context) -> None:
 @click.pass_context
 def tsdb(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,component,NsgRegion,'
         'tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
         'FROM tsDbVarCount '
@@ -143,7 +143,7 @@ def tsdb(ctx: click.Context) -> None:
 @click.pass_context
 def c3p0(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,c3p0NumConnections, c3p0NumBusyConnections, c3p0NumIdleConnections,'
         'c3p0NumFailedCheckouts, c3p0NumFailedIdleTests FROM c3p0NumConnections ORDER BY device')
     api.response_formatter.print_result_as_table(response)
@@ -153,14 +153,14 @@ def c3p0(ctx: click.Context) -> None:
 @click.pass_context
 def redis(ctx: click.Context):
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,redisUsedMemory,redisMaxMemory,'
         'redisUsedCpuSysRate,redisUsedCpuUserRate,redisConnectedClients,redisCommandsRate '
         'FROM redisDbSize '
         'ORDER BY device')
     api.response_formatter.print_result_as_table(response)
 
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,redisErrorsRate,redisOOMErrorsRate FROM redisErrorsRate ORDER BY device')
     api.response_formatter.print_result_as_table(response)
 
@@ -169,7 +169,7 @@ def redis(ctx: click.Context):
 @click.pass_context
 def agent_command_executor(ctx: click.Context) -> None:
     api: API = ctx.obj['api']
-    response = api.nsgql_call(
+    response = api.nsgql_query(
         'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
         'FROM poolSize ORDER BY device')
     api.response_formatter.print_result_as_table(response)
