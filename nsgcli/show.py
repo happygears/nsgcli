@@ -10,7 +10,11 @@ import datetime
 import json
 import click
 import time
+import sys
 from typing import Dict, List, Any
+from google.protobuf import text_format
+from google.protobuf.json_format import MessageToJson
+from net.happygears.proto.NSG_pb2 import Device
 
 from nsgcli.api import API
 import nsgcli.system
@@ -107,19 +111,31 @@ def views(ctx: click.Context, view_id):
 
 @show.command()
 @click.pass_context
+@click.option('--format', 'format_', type=click.Choice(['pb', 'pbj', 'pbb', 'json']), default='json')
 @click.argument('device_id', type=click.INT, required=True)
 @click.argument('field', nargs=-1)
-def device(ctx: click.Context, device_id, field) -> None:
+def device(ctx: click.Context, format_: str, device_id, field) -> None:
     """
     Inspect device identified by its device ID
     """
     api: API = ctx.obj['api']
-    response = api.get_device_json(device_id)
-    dev = json.loads(response.content)
-    if field:
-        print(json.dumps({x: dev.get(x, {}) for x in field}, indent=4))
+    # These options need rethinking, right now this is just a POC
+    if format_.startswith('pb'):
+        dev = Device()
+        dev.ParseFromString(api.get_device_pb(device_id).content)
+        if format_.endswith('j'):
+            print(MessageToJson(dev))
+        elif format_.endswith('bb'):
+            sys.stdout.buffer.write(dev.SerializeToString())
+        else:
+            text_format.PrintMessage(dev, sys.stdout)
     else:
-        print(json.dumps(dev, indent=4))
+        response = api.get_device_json(device_id)
+        dev = json.loads(response.content)
+        if field:
+            print(json.dumps({x: dev.get(x, {}) for x in field}, indent=4))
+        else:
+            print(json.dumps(dev, indent=4))
 
 
 def update_column_width(obj: Dict[str, str], column_name: str, col_wid_dict: Dict[str, int]) -> None:

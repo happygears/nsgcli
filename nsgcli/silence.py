@@ -77,14 +77,14 @@ def silence() -> None:
               help="http://HOST:PORT of your NSG cluster API endpoint (defaults to $NSG_SERVICE_URL)",
               default=os.getenv('NSG_SERVICE_URL'))
 @click.option('--network', default='1', help="Network ID. 1 is usually correct")
-@click.option('--token', help="API token for access to NSG cluster")
+@click.option('--token', help="API token for access to NSG cluster", default=os.getenv('NSG_TOKEN'))
 @click.option('--start',
               help="""
 silence should start on this date and time. Various input formats are supported,
-examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with 
-time zone). See Python module `dateutil` for the detailed list of supported formats. 
-You can set the time zone, but if it is not specified, the time is assumed to be in local 
-time zone. If this parameter is not provided, the start time of the silence is "now". If 
+examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with
+time zone). See Python module `dateutil` for the detailed list of supported formats.
+You can set the time zone, but if it is not specified, the time is assumed to be in local
+time zone. If this parameter is not provided, the start time of the silence is "now". If
 specified, the start time can be both in the future and in the past.""",
               default=str(datetime.datetime.now()))
 @click.option('--expiration',
@@ -138,10 +138,10 @@ def add(base_url, network, token, start, expiration, key, var_name, dev_id, dev_
 @click.option('--start',
               help="""
 silence should start on this date and time. Various input formats are supported,
-examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with 
-time zone). See Python module `dateutil` for the detailed list of supported formats. 
-You can set the time zone, but if it is not specified, the time is assumed to be in local 
-time zone. If this parameter is not provided, the start time of the silence is "now". If 
+examples: '2020-03-20 10:00:00' (no time zone) or 'March 20 2020 10:00:00 -0700' (with
+time zone). See Python module `dateutil` for the detailed list of supported formats.
+You can set the time zone, but if it is not specified, the time is assumed to be in local
+time zone. If this parameter is not provided, the start time of the silence is "now". If
 specified, the start time can be both in the future and in the past.""",
               default=str(datetime.datetime.now()))
 @click.option('--expiration',

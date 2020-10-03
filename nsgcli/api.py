@@ -45,6 +45,10 @@ class API(object):
         request = 'v2/ui/net/{network}/devices/{device_id}'.format(network=self.network, device_id=device_id)
         return self.call('GET', request)
 
+    def get_device_pb(self, device_id: int):
+        request = 'v2/ui/net/{network}/devices/{device_id}'.format(network=self.network, device_id=device_id)
+        return self.call('GET', request, data={'format': 'pb'})
+
     def cache(self, op: str):
         request = 'v2/ui/net/{network}/actions/cache/{op}'.format(network=self.network, op=op)
         return self.call('GET', request)
