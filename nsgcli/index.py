@@ -48,7 +48,7 @@ def show(ctx: click.Context) -> None:
 
     This is the same as `nsgcli show index`
     """
-    nsgcli.show.index(ctx)
+    ctx.forward(nsgcli.show.index)
 
 
 @index.command()
