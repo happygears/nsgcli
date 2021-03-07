@@ -341,9 +341,7 @@ class SystemCommands(sub_command.SubCommand, object):
         # print('Cluster members:')
 
         self.print_cluster_vars(
-            ['name', 'hostName', 'hostAddress', 'pid', 'id', 'role', 'region', 'tier',
-             'status', 'processUptime', 'updatedAt'],
-            status_json)
+            ['name', 'hostName', 'id', 'role', 'region', 'url', 'processUptime', 'updatedAt'], status_json)
 
     def print_cluster_vars(self, names, status_json):
         field_width = collections.OrderedDict()
