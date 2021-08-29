@@ -107,7 +107,10 @@ class SubCommand(cmd.Cmd, object):
     def is_error(self, response):
         if isinstance(response, types.ListType):
             return self.is_error(response[0])
-        return isinstance(response, types.DictionaryType) and response.get('status', 'ok').lower() != 'ok'
+        if isinstance(response, types.DictionaryType):
+            return response.get('error', None) is not None or response.get('status', 'ok').lower() != 'ok'
+        else:
+            return False
 
     def get_error(self, response):
         """
