@@ -13,6 +13,7 @@ import json
 import api
 import index
 import show
+import grok
 import search
 import agent_commands
 import exec_commands
@@ -492,4 +493,19 @@ class NsgCLI(sub_command.SubCommand, object):
                         return None
                 return json.loads(response.content)
 
+    ##########################################################################################
+    def do_grok(self, arg):
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        if arg:
+            sub_cmd.onecmd(arg)
+        else:
+            sub_cmd.cmdloop()
+
+    def help_grok(self):
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        return sub_cmd.help()
+
+    def complete_grok(self, text, _line, _begidx, _endidx):
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
