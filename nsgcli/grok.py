@@ -1,7 +1,7 @@
 """
 This module implements subset of NetSpyGlass CLI commands
 
-:copyright: (c) 2018 by Happy Gears, Inc
+:copyright: (c) 2021 by Happy Gears, Inc
 :license: Apache2, see LICENSE for more details.
 
 """
@@ -16,6 +16,21 @@ import nsgcli.api
 import nsgcli.sub_command
 import nsgcli.system
 import nsgcli.response_formatter
+
+HELP = """
+Parse text line with grok patterns pre-defined within NSG server and one custom grok pattern
+
+parse --text <text> [--pattern <pattern>]
+
+Examples:
+
+    parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host
+    '1.1.1.1'"
+
+    parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 
+    1.1.1.1" --pattern "Login failed for user '%{WORD:login_name}'"
+
+"""
 
 
 class GrokCommands(nsgcli.sub_command.SubCommand, object):
@@ -32,7 +47,7 @@ class GrokCommands(nsgcli.sub_command.SubCommand, object):
     ##########################################################################################
     def do_parse(self, _):
         """
-        Parse text line with NSG-predefined grok patterns
+        Parse text line with grok patterns pre-defined within NSG server and one custom grok pattern
 
         parse --text <text> [--pattern <pattern>]
 
@@ -82,6 +97,10 @@ class GrokCommands(nsgcli.sub_command.SubCommand, object):
                 exit(1)
             else:
                 print(json.dumps(json.loads(response.content), indent=4))
+
+    @staticmethod
+    def help():
+        print(HELP)
 
 
 class InvalidArgsException(Exception):
