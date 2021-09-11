@@ -34,15 +34,9 @@ Examples:
 
 
 class GrokCommands(nsgcli.sub_command.SubCommand, object):
-    def __init__(self, base_url, token, net_id, time_format=nsgcli.response_formatter.TIME_FORMAT_MS, region=None):
+    def __init__(self, base_url, token, net_id):
         super(GrokCommands, self).__init__(base_url, token, net_id)
-        self.system_commands = nsgcli.system.SystemCommands(
-            self.base_url, self.token, self.netid, time_format=time_format, region=region)
-        self.current_region = region
-        if region is None:
-            self.prompt = 'grok # '
-        else:
-            self.prompt = 'grok [' + self.current_region + '] # '
+        self.prompt = 'grok # '
 
     ##########################################################################################
     def do_parse(self, _):
@@ -79,7 +73,7 @@ class GrokCommands(nsgcli.sub_command.SubCommand, object):
             print('--text parameter is mandatory')
             raise InvalidArgsException
 
-        request = 'v2/grok/parser'
+        request = 'v2/grok/net/{0}/parser'.format(self.netid)
         try:
             data = {'text': txt}
             if pattern:

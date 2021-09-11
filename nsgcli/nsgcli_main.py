@@ -495,17 +495,17 @@ class NsgCLI(sub_command.SubCommand, object):
 
     ##########################################################################################
     def do_grok(self, arg):
-        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_grok(self):
-        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid)
         return sub_cmd.help()
 
     def complete_grok(self, text, _line, _begidx, _endidx):
-        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = grok.GrokCommands(self.base_url, self.token, self.netid)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
