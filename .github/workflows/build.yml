@@ -31,17 +31,24 @@ jobs:
           build
           --user
 
-      #python setup.py sdist bdist_wheel
-      - name: Build a binary wheel and a source tarball
-        run: >-
-          python -m
-          build
-          --sdist
-          --wheel
-          --outdir dist/
+      - name: Define NSG Version
+        id: nsg_version
+        uses: ./.github/actions/nsg_version
+
+      - name: Build
+        run: |
+          echo "__version__ = '${{ steps.nsg_version.outputs.long_version }}'" > nsgcli/version.py
+          python setup.py sdist bdist_wheel
+
+#      - name: Build a binary wheel and a source tarball
+#        run: >-
+#          python -m
+#          build
+#          --sdist
+#          --wheel
+#          --outdir dist/
           .
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
-#          repository_url: https://test.pypi.org/legacy/
