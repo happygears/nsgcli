@@ -35,6 +35,7 @@ jobs:
 
       #python -m build --sdist --wheel --outdir dist/
       - name: Build
+        shell: bash
         run: |
           echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
           python --version
