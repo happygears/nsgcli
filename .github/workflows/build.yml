@@ -27,7 +27,7 @@ jobs:
       - name: Install build, wheel
         run: |
           python -m pip install build --user
-          python -m pip install wheel --user
+          python -m pip install wheel
 
       - name: Define NSG Version
         id: nsg_version
