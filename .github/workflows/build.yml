@@ -24,17 +24,16 @@ jobs:
         with:
           python-version: 2.7
 
-      - name: Install pypa/build
-        run: >-
-          python -m
-          pip install
-          build
-          --user
+      - name: Install build, wheel
+        run: |
+          python -m pip install build --user
+          python -m pip install wheel --user
 
       - name: Define NSG Version
         id: nsg_version
         uses: ./.github/actions/nsg_version
 
+      #python -m build --sdist --wheel --outdir dist/
       - name: Build
         run: |
           echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
