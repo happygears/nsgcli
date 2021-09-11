@@ -33,13 +33,14 @@ jobs:
         id: nsg_version
         uses: ./.github/actions/nsg_version
 
+      - name: Set version
+        shell: bash
+        run: echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
+
       #python -m build --sdist --wheel --outdir dist/
       - name: Build
         shell: bash
-        run: |
-          echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
-          python --version
-          python setup.py sdist bdist_wheel
+        run: python setup.py sdist bdist_wheel
           .
       - name: Publish
         uses: pypa/gh-action-pypi-publish@master
