@@ -29,7 +29,9 @@ try {
     const git_branch_safe = git_branch.replace("/", "-")
     const is_release_branch = ["master", "main", "release"].indexOf(git_branch) !== -1 || git_branch.startsWith("release/")
     const is_development_branch = ["develop", "development"].indexOf(git_branch) !== -1
-    const is_feature_branch_or_pr = !is_release_branch && !is_development_branch
+    const is_feature_branch_or_pr = !is_release_branch &&
+                                    !is_development_branch &&
+                                    !process.env.GITHUB_REF.startsWith("refs/tags/v")
 
     setOutput("is_release_branch", is_release_branch.toString())
     setOutput("is_development_branch", is_development_branch.toString())
