@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [ "**" ]
+    tags:
+      - v*
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Check current branch restrictions
+        id: allow_step
+        run: echo "::set-output name=allow-step::$([[ "$(grep -icm1 '${{ github.ref }}' .github/workflows/.build-branch-allow)" = 1 ]] && echo ALLOW || echo NOT_ALLOW)"
+
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 2.7
+
+      - name: Install build, wheel
+        run: |
+          python -m pip install build --user
+          python -m pip install -Iv wheel==0.36.2 --user
+
+      - name: Define NSG Version
+        id: nsg_version
+        uses: ./.github/actions/nsg_version
+
+      - name: Set version
+        shell: bash
+        run: echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
+
+      #python -m build --sdist --wheel --outdir dist/
+      - name: Build
+        shell: bash
+        run: python setup.py sdist bdist_wheel
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
