@@ -1,9 +1,6 @@
 name: CI
 
 on:
-  pull_request:
-    branches-ignore:
-      - master
   push:
     branches: [ "**" ]
     tags:
@@ -46,6 +43,7 @@ jobs:
         run: python setup.py sdist bdist_wheel
 
       - name: Publish
+        if: ${{ startsWith('refs/tags/v', github.ref) }}
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
