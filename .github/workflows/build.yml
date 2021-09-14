@@ -35,7 +35,7 @@ jobs:
 
       - name: Set version
         shell: bash
-        run: echo "__version__ = '${{ steps.nsg_version.outputs.git_tag }}.${{ steps.nsg_version.outputs.git_commits_since_tag }}'" > nsgcli/version.py
+        run: echo "__version__ = '${{ steps.nsg_version.outputs.long_version }}'" > nsgcli/version.py
 
       #python -m build --sdist --wheel --outdir dist/
       - name: Build

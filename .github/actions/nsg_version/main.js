@@ -39,7 +39,7 @@ try {
     setOutput("git_branch_safe", git_branch_safe)
 
     // actions@checkout performs a shallow checkout. Need to unshallow for full tags access.
-    let cmd = "git fetch --prune --unshallow && git describe --tags --abbrev=1"
+    let cmd = "git fetch --prune --unshallow && git describe --tags --abbrev=1 --long"
     debug(`Executing: ${cmd}`)
 
     exec(cmd, (err, output, stderr) => {
@@ -57,12 +57,9 @@ try {
         // Remove "g" prefix
         const git_describe_object_id = parts[2].slice(1)
 
-        let long_version = `${git_tag}-${git_commits_since_tag}`
+        let long_version = `${git_tag}`
         if ( is_feature_branch_or_pr ) {
-            long_version += `-${git_describe_object_id}`
-        }
-        if ( !is_release_branch && git_branch_safe !== "" ) {
-            long_version += `-${git_branch_safe}`
+            long_version += `.${git_commits_since_tag}`
         }
 
         setOutput("git_tag", git_tag)
