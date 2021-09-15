@@ -35,7 +35,7 @@ SERVER_ARGS = ['pause', 'status']
 EXEC_ARGS = ['ping', 'fping', 'traceroute']
 FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
-DISCOVERY_ARGS = ['start', 'queue']
+DISCOVERY_ARGS = ['start', 'pause', 'resume', 'schedule']
 HUD_ARGS = ['reset']
 NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
@@ -197,57 +197,53 @@ class NsgCLI(sub_command.SubCommand, object):
     ##########################################################################################
     def do_discovery(self, arg):
         """
-        Manage discovery process
+        Manage discovery process. Supported commands:
 
-        :param arg: can be a number, in which case it is assumed to be deviceID and we make API
-                    call "v2/nsg/discovery/net/:netID/schedule/:deviceID"
-                    If not a number, then it can be "queue" to show discovery queue, or
-                    "start" to start batch discovery on old clusters w/o incremental discovery.
+        discovery start      --  deprecated, supported for backward compatibility with NSG clusters
+                                 that do not implement incremental discovery
+        discovery pause
+        discovery resume
+        discovery schedule deviceID
+
+        :param arg: command, possibly with argument (separated by space)
         """
         try:
-            dev_id = int(arg)
-            request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, dev_id)
-            response = self.basic_command(request)
-            self.print_response(response)
-            # now print the queue and pending tasks
-            arg = 'queue'
+            if ' ' in arg:
+                comps = arg.split(' ')
+                if comps[0] == 'schedule':
+                    dev_id = int(comps[1])
+                    request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, dev_id)
+                    response = self.basic_command(request)
+                    self.print_response(response)
+                else:
+                    print('Unsupported command "discovery {}"'.format(arg))
+                return
+            elif arg == 'pause':
+                request = 'v2/nsg/discovery/net/{0}/pause'.format(self.netid)
+                response = self.basic_command(request)
+                self.print_response(response)
+            elif arg == 'resume':
+                request = 'v2/nsg/discovery/net/{0}/resume'.format(self.netid)
+                response = self.basic_command(request)
+                self.print_response(response)
+            elif arg == 'start':
+                print('WARNING: command "discovery start" has been deprecated and is supported only for backward '
+                      'compatibility with NSG clusters that do not support incremental discovery')
+                request = 'v2/nsg/discovery/net/{0}/start'.format(self.netid)
+                response = self.basic_command(request)
+                if response is not None:
+                    self.print_response(response)
+            else:
+                print('Invalid argument "{0}"'.format(arg))
         except ValueError as e:
             # arg is not a number, try other commands
             pass
-        if arg not in DISCOVERY_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        request = 'v2/nsg/discovery/net/{0}/{1}'.format(self.netid, arg)
-        response = self.basic_command(request)
-        self.print_discovery_queue(response)
 
     def help_discovery(self):
         print('Operations with network discovery. Supported arguments: {0}'.format(DISCOVERY_ARGS))
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DISCOVERY_ARGS)
-
-    def print_discovery_queue(self, response):
-        if response is not None:
-            # both are lists of dictionaries. Order matters.
-            in_progress = response['inProgress']
-            if not in_progress:
-                print('There are no discovery tasks in progress at this time')
-            else:
-                print('Discovery tasks in progress:')
-                format = '    {0:10}  {1:32}  {2:16}  {3}'
-                print(format.format('device ID', 'name', 'address', 'duraiton, sec'))
-                for task in in_progress:
-                    print(format.format(task['deviceID'], task['name'], task['address'], task['duration']))
-                print()
-            queue = response['queue']
-            if not queue:
-                print('Discovery queue is empty')
-            else:
-                print('Queue:')
-                print(format.format('device ID', 'name', 'address', 'duraiton, sec'))
-                for task in queue:
-                    print(format.format(task['deviceID'], task['name'], task['address'], task['duration']))
 
     ##########################################################################################
     def do_hud(self, arg):
