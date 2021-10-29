@@ -254,6 +254,15 @@ class AgentCommands(sub_command.SubCommand, object):
         cmd_args = self.make_args(args)
         self.common_command('set_property', cmd_args)
 
+    def do_get_syslog_stats(self, args):
+        """
+        Contacts given agent (or all), and gets statistics of syslog server network IO
+
+        agent <agent_name> get_syslog_stats
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('get_syslog_stats', cmd_args)
+
     def do_measurements(self, args):
         """
         Contacts agent (or all), and retrieves current values of its monitoring
