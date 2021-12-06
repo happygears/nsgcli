@@ -21,23 +21,24 @@ import nsgcli.response_formatter
 
 HELP = """
 Parse text line with grok patterns
-        Parse text line with grok patterns
+        Parse text line or syslog message with grok patterns
 
-        parse [--text <text>] [--pattern <pattern>]
+        log [--text <text>] [--pattern <pattern>]
+        text --text <text> --pattern <pattern>
 
         Parameters:
-            --text val Optional. Text to be parsed, read stdin if not specified
-            --pattern val Optional. Grok pattern to be applied to input text, use only pre-defined patterns if not specified.
+            --text Text to be parsed, read stdin if not specified
+            --pattern Grok pattern to be applied to input text, use only pre-defined patterns if not specified.
 
         Examples:
 
-            parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host
+            log --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host
             '79.174.187.54'"
 
-            parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user
+            log --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user
             'root' from host 1.1.1.1" --pattern "Login failed for user '%{WORD:login_name}'"
             
-            parse --pattern "Login failed for user '%{WORD:login_name}'" <<< 
+            log --pattern "Login failed for user '%{WORD:login_name}'" <<< 
             "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 1.1.1.1"            
 """
 
@@ -52,25 +53,26 @@ class GrokCommands(nsgcli.sub_command.SubCommand, object):
         print(HELP)
 
     ##########################################################################################
-    def do_parse(self, _):
+    def do_log(self, _):
         """
-        Parse text line with grok patterns
+        Parse syslog message with grok patterns
 
-        parse [--text <text>] [--pattern <pattern>]
+        log [--text <text>] [--pattern <pattern>]
 
         Parameters:
-            --text val Optional. Text to be parsed, read stdin if not specified
+            --text val Optional. Message to be parsed, read stdin if not specified
             --pattern val Optional. Grok pattern to be applied to input text, use only pre-defined patterns if not specified.
 
         Examples:
+            text --text "Hello world of Grok" --pattern "Hello world of %{WORD:world_name}"
 
-            parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host
+            log --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host
             '79.174.187.54'"
 
-            parse --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user
+            log --text "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user
             'root' from host 1.1.1.1" --pattern "Login failed for user '%{WORD:login_name}'"
 
-            parse --pattern "Login failed for user '%{WORD:login_name}'" <<<
+            log --pattern "Login failed for user '%{WORD:login_name}'" <<<
             "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 1.1.1.1"
         """
         try:
@@ -92,10 +94,49 @@ class GrokCommands(nsgcli.sub_command.SubCommand, object):
         if not txt:
             self.read_stdin(pattern)
         else:
-            self.call_grok_api(txt, pattern)
+            self.call_grok_api("log", txt, pattern)
 
-    def call_grok_api(self, txt, pattern):
-        request = 'v2/grok/net/{0}/parser'.format(self.netid)
+    ##########################################################################################
+    def do_text(self, _):
+        """
+        Parse text line with grok patterns
+
+        text [--text <text>] [--pattern <pattern>]
+
+        Parameters:
+            --text Text to be parsed, read stdin if not specified
+            --pattern Grok pattern to be applied to input text.
+
+        Examples:
+
+            text --text "Hello world of Grok" --pattern "Hello world of %{WORD:world_name}"
+
+            text --pattern "Hello world of %{WORD:world_name}" <<<
+            "Hello world of Grok"
+        """
+        try:
+            opts, args = getopt.getopt(sys.argv[3:],
+                                       't:p:',
+                                       ['text=', 'pattern='])
+        except getopt.GetoptError as ex:
+            print('UNKNOWN: Invalid Argument:' + str(ex))
+            raise InvalidArgsException
+
+        txt = None
+        pattern = None
+        for opt, arg in opts:
+            if opt in ['-t', '--text']:
+                txt = arg
+            elif opt in ('-p', '--pattern'):
+                pattern = arg
+
+        if not txt:
+            self.read_stdin(pattern)
+        else:
+            self.call_grok_api("", txt, pattern)
+
+    def call_grok_api(self, parser, txt, pattern):
+        request = 'v2/grok/net/{0}/parser/{1}'.format(self.netid, parser)
         try:
             data = {'text': txt}
             if pattern:
