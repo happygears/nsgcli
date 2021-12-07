@@ -68,10 +68,6 @@ class NsgGrokCommandLine(Cmd):
             log <<< "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 10.1.1.1"
         """
 
-        if self.pattern is None:
-            print("'pattern' parameter is missing")
-            raise InvalidArgsException
-
         if cmd_args is None:
             self.read_stdin("log", self.pattern)
         else:
@@ -80,16 +76,17 @@ class NsgGrokCommandLine(Cmd):
     ##########################################################################################
     def do_text(self, cmd_args):
         """
-        Parse text line with grok patterns
+        Parse text line with grok patterns.
+        Require 'pattern' parameter.
 
-        text <text>
+        --pattern="Hello world of %{WORD:world_name}" text <text>
 
         Parameters:
             text - Text to be parsed, read stdin if not specified
 
         Examples:
-            text "Hello world of Grok"
-            text <<< "Hello world of Grok"
+            --pattern="Hello world of %{WORD:world_name}" text "Hello world of Grok"
+            --pattern="Hello world of %{WORD:world_name}" text <<< "Hello world of Grok"
         """
 
         if self.pattern is None:
