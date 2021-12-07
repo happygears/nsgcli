@@ -11,20 +11,39 @@ from nsgcli.version import __version__
 
 
 usage_msg = """
-This script parses input with Grok
+Parse text line or syslog message with grok patterns.
 
 Usage:
 
-    nsggrok.py --base-url=url [--token=token] [--network=netid] [--pattern=pattern] [command]
+    nsggrok.py --base-url=url [--token=token] [--network=netid] [--pattern=pattern] [log|text]
     
-    --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
-                 --base-url must be provided.
-    --token:     server API access token (if the server is configured with user authentication)
-    --network:      NetSpyGlass network id (a number, default: 1).    
-    --pattern:   Grok pattern to be applied to input text.
-    -v, --version:   print version and exit
-
+    -b, --base-url:  Server access URL without the path, for example 'http://nsg.domain.com:9100'
+    -t, --token:     Server API access token (if the server is configured with user authentication)
+    -n, --network:   NetSpyGlass network id (a number, default: 1).    
+    -p, --pattern:   Grok pattern to be applied to input text.
+    -v, --version:   Print version and exit
+    -h, --help:      Print this help
+    
     all arguments provided on the command line after the last switch are interpreted together as nsggrok command
+    
+Commands:
+    text <text>: Parse text line with grok patterns.
+        Examples:
+            --pattern="Hello world of %{WORD:world_name}" text "Hello world of Grok"
+            --pattern="Hello world of %{WORD:world_name}" text <<< "Hello world of Grok"
+    
+        Std-in (multiline) example:
+            echo -e "Hello world of Grok\\nHello world of Frog" | nsggrok --pattern="Hello world of %{WORD:world_name}" text
+    
+    log <message>: Parse syslog message with grok patterns
+        Examples:
+            log "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
+            --pattern="Login failed for user '%{WORD:user_name}'" log "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
+            log <<< "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 10.1.1.1"
+        
+        Std-in (multiline) example:
+            echo -e "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.5'\\n
+                     <13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'" | nsggrok log    
 """
 
 

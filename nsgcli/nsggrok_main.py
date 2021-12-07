@@ -57,6 +57,8 @@ class NsgGrokCommandLine(Cmd):
     def do_log(self, cmd_args):
         """
         Parse syslog message with grok patterns
+        The 'pattern' parameter is optional. If specified, it is applied to the input message only if other pre-defined
+        patterns defined in NSG Agent syslog configuration didn't match the message.
 
         log <message>
 
@@ -65,13 +67,15 @@ class NsgGrokCommandLine(Cmd):
 
         Examples:
             log "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
+            --pattern="Login failed for user '%{WORD:user_name}'" log "<13>May 18 11:22:43 carrier sshd:
+            SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
             log <<< "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 10.1.1.1"
         """
 
         if cmd_args is None:
-            self.read_stdin("log", self.pattern)
+            self.read_stdin("log")
         else:
-            self.call_grok_api("log", cmd_args, self.pattern)
+            self.call_grok_api("log", cmd_args)
 
     ##########################################################################################
     def do_text(self, cmd_args):
@@ -82,7 +86,7 @@ class NsgGrokCommandLine(Cmd):
         --pattern="Hello world of %{WORD:world_name}" text <text>
 
         Parameters:
-            text - Text to be parsed, read stdin if not specified
+            text - Text line to be parsed, if not specified input is taken from stdin
 
         Examples:
             --pattern="Hello world of %{WORD:world_name}" text "Hello world of Grok"
@@ -94,9 +98,9 @@ class NsgGrokCommandLine(Cmd):
             raise InvalidArgsException
 
         if cmd_args is None:
-            self.read_stdin("", self.pattern)
+            self.read_stdin("")
         else:
-            self.call_grok_api("", cmd_args, self.pattern)
+            self.call_grok_api("", cmd_args)
 
     def get_error(self, response):
         """
@@ -109,12 +113,12 @@ class NsgGrokCommandLine(Cmd):
         else:
             return str(response)
 
-    def call_grok_api(self, parser, txt, pattern):
+    def call_grok_api(self, parser, txt):
         request = 'v2/grok/net/{0}/parser/{1}'.format(self.netid, parser)
         try:
             data = {'text': txt}
-            if pattern:
-                data['pattern'] = pattern
+            if self.pattern:
+                data['pattern'] = self.pattern
 
             response = nsgcli.api.call(self.base_url, 'POST', request, data, token=self.token)
         except Exception as ex:
@@ -129,7 +133,7 @@ class NsgGrokCommandLine(Cmd):
             else:
                 print(json.dumps(json.loads(response.content), indent=4))
 
-    def read_stdin(self, parser, pattern):
+    def read_stdin(self, parser):
         in_buffer = ""
         while True:
             select.select([sys.stdin.fileno()], [], [])
@@ -139,7 +143,7 @@ class NsgGrokCommandLine(Cmd):
             if len(read) == 0:
                 # in_buffer might not be empty
                 if len(in_buffer) > 0:
-                    self.call_grok_api(parser, in_buffer, pattern)
+                    self.call_grok_api(parser, in_buffer)
                 break
 
             # find newlines
@@ -147,7 +151,7 @@ class NsgGrokCommandLine(Cmd):
             in_buffer += parts.pop(0)
 
             while len(parts) > 0:
-                self.call_grok_api(parser, in_buffer, pattern)
+                self.call_grok_api(parser, in_buffer)
                 in_buffer = parts.pop(0)
 
 
