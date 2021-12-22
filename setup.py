@@ -24,6 +24,6 @@ setuptools.setup(name='nsgcli',
                  install_requires=[
                      'requests', 'requests-unixsocket', 'pyhocon', 'typing', 'python-dateutil'
                  ],
-                 scripts=['bin/nsgcli', 'bin/nsgql', 'bin/silence'],
+                 scripts=['bin/nsgcli', 'bin/nsgql', 'bin/silence', 'bin/nsggrok'],
                  include_package_data=True,
                  zip_safe=False)

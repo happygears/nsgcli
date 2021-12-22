@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+
+from __future__ import print_function
+
+import getopt
+import os
+import sys
+import nsgcli.nsggrok_main
+import nsgcli.response_formatter
+from nsgcli.version import __version__
+
+
+usage_msg = """
+Parse text line or syslog message with grok patterns.
+
+Usage:
+
+    nsggrok.py --base-url=url [--token=token] [--network=netid] [--pattern=pattern] [log|text]
+    
+    -b, --base-url:  Server access URL without the path, for example 'http://nsg.domain.com:9100'
+    -t, --token:     Server API access token (if the server is configured with user authentication)
+    -n, --network:   NetSpyGlass network id (a number, default: 1).    
+    -p, --pattern:   Grok pattern to be applied to input text.
+    -v, --version:   Print version and exit
+    -h, --help:      Print this help
+    
+    all arguments provided on the command line after the last switch are interpreted together as nsggrok command
+    
+Commands:
+    text <text>: Parse text line with grok patterns.
+        Examples:
+            --pattern="Hello world of %{WORD:world_name}" text "Hello world of Grok"
+            --pattern="Hello world of %{WORD:world_name}" text <<< "Hello world of Grok"
+    
+        Std-in (multiline) example:
+            echo -e "Hello world of Grok\\nHello world of Frog" | nsggrok --pattern="Hello world of %{WORD:world_name}" text
+    
+    log <message>: Parse syslog message with grok patterns
+        Examples:
+            log "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
+            --pattern="Login failed for user '%{WORD:user_name}'" log "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'"
+            log <<< "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 10.1.1.1"
+        
+        Std-in (multiline) example:
+            echo -e "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.5'\\n
+                     <13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host '10.1.1.1'" | nsggrok log    
+"""
+
+
+class InvalidArgsException(Exception):
+    pass
+
+
+def usage():
+    print(usage_msg)
+
+
+if __name__ == '__main__':
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],
+                                   'hb:t:n:p:v',
+                                   ['help', 'base-url=', 'token=', 'network=', 'pattern=', 'version'])
+    except getopt.GetoptError as ex:
+        print('UNKNOWN: Invalid Argument:' + str(ex))
+        raise InvalidArgsException
+
+    base_url = os.getenv('NSG_SERVICE_URL')
+    token = os.getenv('NSG_API_TOKEN')
+    netid = 1
+    region = None
+    command = ''
+    pattern = None
+    time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
+
+    for opt, arg in opts:
+        if opt in ['-h', '--help']:
+            usage()
+            sys.exit(3)
+        elif opt in ('-b', '--base-url'):
+            base_url = arg.rstrip('/ ')
+        elif opt in ('-a', '--token'):
+            token = arg
+        elif opt in ('-n', '--network'):
+            netid = arg
+        elif opt in ('-p', '--pattern'):
+            pattern = arg
+        elif opt in ['-v', '--version']:
+            print(__version__)
+            sys.exit(0)
+
+    if args:
+        command = ' '.join(args)
+
+    if not base_url:
+        print('--base-url parameter is mandatory')
+        raise InvalidArgsException
+
+    if token is None:
+        token = ''
+
+    script = nsgcli.nsggrok_main.NsgGrokCommandLine(base_url=base_url, token=token, netid=netid, pattern=pattern)
+    try:
+        if command:
+            # print('Command={0}'.format(script.command))
+            script.onecmd(command)
+        else:
+            script.summary()
+            script.prompt = script.base_url + ' > '
+            script.cmdloop()
+    except KeyboardInterrupt as e:
+        sys.exit(0)
+
