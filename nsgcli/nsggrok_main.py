@@ -72,7 +72,7 @@ class NsgGrokCommandLine(Cmd):
             log <<< "<13>May 18 11:22:43 carrier sshd: SSHD_LOGIN_FAILED: Login failed for user 'root' from host 10.1.1.1"
         """
 
-        if cmd_args is None:
+        if cmd_args is None or "" == cmd_args:
             self.read_stdin("log")
         else:
             self.call_grok_api("log", cmd_args)
@@ -97,7 +97,7 @@ class NsgGrokCommandLine(Cmd):
             print("'pattern' parameter is missing")
             raise InvalidArgsException
 
-        if cmd_args is None:
+        if cmd_args is None or "" == cmd_args:
             self.read_stdin("")
         else:
             self.call_grok_api("", cmd_args)
