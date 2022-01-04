@@ -70,12 +70,18 @@ class NsgQLCommandLine(Cmd):
                     return None
             else:
                 table_formatter = response_formatter.ResponseFormatter(self.time_format)
-                # print(response)
-                deserialized = response.json()
+                if self.raw:
+                    print(response.content)
+                    return None
+                try:
+                    deserialized = response.json()
+                except Exception, e:
+                    print('ERROR: {0}, response={1}'.format(e, response.content))
+                    return None
                 # print(deserialized)
                 # print(type(line))
                 # print(line)
-                if not self.raw and self.format == 'table':
+                if self.format == 'table':
                     for resp in deserialized:
                         error = self.is_error(resp)
                         if error:
