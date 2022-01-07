@@ -19,7 +19,6 @@ import exec_commands
 import snmp_commands
 import sub_command
 
-
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
 TIME_FORMAT_ISO_LOCAL = 'iso_local'
@@ -36,7 +35,7 @@ FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start', 'pause', 'resume', 'schedule']
 HUD_ARGS = ['reset']
-NSGQL_ARGS = ['rebuild']   # command "nsgql rebuild" rebuilds NsgQL dynamic schema
+NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
 
 class NsgCLI(sub_command.SubCommand, object):
@@ -85,18 +84,21 @@ class NsgCLI(sub_command.SubCommand, object):
 
     ##########################################################################################
     def do_show(self, arg):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         if arg:
             sub_cmd.onecmd(arg)
         else:
             sub_cmd.cmdloop()
 
     def help_show(self):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         return sub_cmd.help()
 
     def complete_show(self, text, _line, _begidx, _endidx):
-        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format, region=self.current_region)
+        sub_cmd = show.ShowCommands(self.base_url, self.token, self.netid, time_format=self.time_format,
+                                    region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
 
     ##########################################################################################
@@ -202,7 +204,7 @@ class NsgCLI(sub_command.SubCommand, object):
                                  that do not implement incremental discovery
         discovery pause
         discovery resume
-        discovery schedule deviceID
+        discovery schedule device1 device2 device3   where each device is identified by device ID, name, sysName or address
 
         :param arg: command, possibly with argument (separated by space)
         """
@@ -210,10 +212,10 @@ class NsgCLI(sub_command.SubCommand, object):
             if ' ' in arg:
                 comps = arg.split(' ')
                 if comps[0] == 'schedule':
-                    dev_id = comps[1]  # can be deviceID, name, sysName, address
-                    request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, dev_id)
-                    response = self.basic_command(request)
-                    self.print_response(response)
+                    for d in comps[1:]:
+                        request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, d)
+                        response = self.basic_command(request)
+                        self.print_response(response)
                 else:
                     print('Unsupported command "discovery {}"'.format(arg))
                 return
@@ -239,7 +241,18 @@ class NsgCLI(sub_command.SubCommand, object):
             pass
 
     def help_discovery(self):
-        print('Operations with network discovery. Supported arguments: {0}'.format(DISCOVERY_ARGS))
+        print("""Operations with network discovery:
+        
+show discovery queue:                 shows current state of discovery queue
+        
+discovery schedule dev1 dev2 dev3     put devices in front of the queue. Devices can be
+                                      identified by deviceID, name, sysName or address
+        
+discovery pause                       pause discovery. In-progress discovery processes will finish
+                                      but new devices already in the queue are not going to be scheduled
+                                              
+discovery resume                      resume discovery
+""")
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DISCOVERY_ARGS)
@@ -416,10 +429,12 @@ class NsgCLI(sub_command.SubCommand, object):
             agent_name = args.pop(0)
             work_args = ' '.join(args)
         if not work_args:
-            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
+                                                   region=self.current_region)
             sub_cmd.cmdloop()
         else:
-            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid, region=self.current_region)
+            sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
+                                                   region=self.current_region)
             sub_cmd.onecmd(work_args)
 
     def help_agent(self):
