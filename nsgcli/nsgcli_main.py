@@ -210,7 +210,7 @@ class NsgCLI(sub_command.SubCommand, object):
             if ' ' in arg:
                 comps = arg.split(' ')
                 if comps[0] == 'schedule':
-                    dev_id = int(comps[1])
+                    dev_id = comps[1]  # can be deviceID, name, sysName, address
                     request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, dev_id)
                     response = self.basic_command(request)
                     self.print_response(response)
