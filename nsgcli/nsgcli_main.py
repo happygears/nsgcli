@@ -15,6 +15,7 @@ import index
 import show
 import search
 import agent_commands
+import discovery_commands
 import exec_commands
 import snmp_commands
 import sub_command
@@ -33,7 +34,7 @@ SERVER_ARGS = ['pause', 'status']
 EXEC_ARGS = ['ping', 'fping', 'traceroute']
 FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
-DISCOVERY_ARGS = ['start', 'pause', 'resume', 'schedule']
+DISCOVERY_ARGS = ['start', 'pause', 'resume', 'submit', 'status']
 HUD_ARGS = ['reset']
 NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
@@ -208,51 +209,15 @@ class NsgCLI(sub_command.SubCommand, object):
 
         :param arg: command, possibly with argument (separated by space)
         """
-        try:
-            if ' ' in arg:
-                comps = arg.split(' ')
-                if comps[0] == 'schedule':
-                    for d in comps[1:]:
-                        request = 'v2/nsg/discovery/net/{0}/schedule/{1}'.format(self.netid, d)
-                        response = self.basic_command(request)
-                        self.print_response(response)
-                else:
-                    print('Unsupported command "discovery {}"'.format(arg))
-                return
-            elif arg == 'pause':
-                request = 'v2/nsg/discovery/net/{0}/pause'.format(self.netid)
-                response = self.basic_command(request)
-                self.print_response(response)
-            elif arg == 'resume':
-                request = 'v2/nsg/discovery/net/{0}/resume'.format(self.netid)
-                response = self.basic_command(request)
-                self.print_response(response)
-            elif arg == 'start':
-                print('WARNING: command "discovery start" has been deprecated and is supported only for backward '
-                      'compatibility with NSG clusters that do not support incremental discovery')
-                request = 'v2/nsg/discovery/net/{0}/start'.format(self.netid)
-                response = self.basic_command(request)
-                if response is not None:
-                    self.print_response(response)
-            else:
-                print('Invalid argument "{0}"'.format(arg))
-        except ValueError as e:
-            # arg is not a number, try other commands
-            pass
+        sub_cmd = discovery_commands.DiscoveryCommands(self.base_url, self.token, self.netid, self.time_format)
+        if not arg:
+            sub_cmd.cmdloop()
+        else:
+            sub_cmd.onecmd(arg)
 
     def help_discovery(self):
-        print("""Operations with network discovery:
-        
-show discovery queue:                 shows current state of discovery queue
-        
-discovery schedule dev1 dev2 dev3     put devices in front of the queue. Devices can be
-                                      identified by deviceID, name, sysName or address
-        
-discovery pause                       pause discovery. In-progress discovery processes will finish
-                                      but new devices already in the queue are not going to be scheduled
-                                              
-discovery resume                      resume discovery
-""")
+        sub_cmd = discovery_commands.DiscoveryCommands(self.base_url, self.token, self.netid, self.time_format)
+        sub_cmd.help()
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DISCOVERY_ARGS)

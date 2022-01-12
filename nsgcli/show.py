@@ -15,6 +15,7 @@ import time
 
 from typing import Dict, Any
 
+import discovery_commands
 import nsgcli.api
 import nsgcli.sub_command
 import nsgcli.system
@@ -135,39 +136,8 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         """
         show discovery status
         """
-        request = 'v2/nsg/discovery/net/{0}/queue'.format(self.netid)
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            status = response.status_code
-            if status != 200:
-                print('ERROR: {0}'.format(self.get_error(response)))
-            else:
-                resp_dict = json.loads(response.content)
-                if not resp_dict['enabled']:
-                    print('Discovery is disabled by configuration')
-                if resp_dict['paused']:
-                    print('Discovery is paused')
-                    print()
-                # both 'in progress' and 'queue' are lists of dictionaries. Order matters.
-                in_progress = resp_dict['inProgress']
-                discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
-                if in_progress:
-                    print('Discovery tasks in progress:')
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in in_progress:
-                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'], task['duration']))
-                    print()
-                queue = resp_dict['queue']
-                if queue:
-                    print('Queue:')
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in queue:
-                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'], task['duration']))
-                else:
-                    print('Discovery queue is empty')
+        sub_cmd = discovery_commands.DiscoveryCommands(self.base_url, self.token, self.netid, None)
+        sub_cmd.do_queue(arg)
 
 ##########################################################################################
     def do_status(self, _):

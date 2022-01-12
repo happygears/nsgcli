@@ -69,7 +69,7 @@ class NsgQLCommandLine(Cmd):
                     print('ERROR: {0}'.format(json.loads(line)))
                     return None
             else:
-                table_formatter = response_formatter.ResponseFormatter(self.time_format)
+                table_formatter = response_formatter.ResponseFormatter(time_format=self.time_format)
                 if self.raw:
                     print(response.content)
                     return None

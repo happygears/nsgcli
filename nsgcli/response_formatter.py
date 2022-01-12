@@ -8,10 +8,18 @@ This module is part of the nsgcli package
 from __future__ import print_function
 
 import datetime
+from datetime import tzinfo
+import dateutil.parser
+import dateutil.tz
 import numbers
 import time
+import json
 
-TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince', 'timeOfLastNotification']
+import pytz
+
+TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
+                'timeOfLastNotification', 'createdAt']
+TIME_ISO8601_COLUMNS = ['discoveryStartTime', 'discoveryFinishTime', 'processingFinishTime']
 
 MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
                        'jvmMemFree', 'jvmMemMax', 'jvmMemTotal', 'jvmMemUsed',
@@ -19,9 +27,14 @@ MEMORY_VALUE_FIELDS = ['fsFreeSpace', 'fsTotalSpace', 'systemMemTotal',
 
 PERCENTAGE_VALUE_FIELDS = ['cpuUsage', 'systemMemFreePercent', 'fsUtil']
 
+BOOLEAN_VALUE_FIELDS = ['discoveryPingStatus', 'discoverySnmpStatus']
+
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
 TIME_FORMAT_ISO_LOCAL = 'iso_local'
+
+epoch = datetime.datetime(1970, 1, 1, tzinfo=pytz.utc)
+default_tz = datetime.datetime(1970, 1, 1, tzinfo=dateutil.tz.tzlocal())
 
 
 def sizeof_fmt(num, suffix='B'):
@@ -39,10 +52,11 @@ def percentage_fmt(num):
 
 
 class ResponseFormatter(object):
-    def __init__(self, time_format=TIME_FORMAT_MS):
+    def __init__(self, column_title_mapping=None, time_format=TIME_FORMAT_MS):
         super(ResponseFormatter, self).__init__()
         self.header_divider = '-+-'
         self.cell_divider = ' | '
+        self.column_title_mapping = column_title_mapping
         self.time_format = time_format
 
     def print_result_as_table(self, resp):
@@ -88,9 +102,11 @@ class ResponseFormatter(object):
                 print(self.cell_divider.join(row_elements))
             self.print_table_header_separator(widths)
         processing_time_sec = resp.get('processingTimeMs', 0) / 1000.0
-        print('Count: {0}, served by: {1}, processing time: {2} sec; query id: {3}'.format(
-            len(rows), resp.get('server', 'unknown'), processing_time_sec, resp.get('queryId', 0)))
-        print('')
+        server = resp.get('server', '')
+        if server:
+            print('Count: {0}, served by: {1}, processing time: {2} sec; query id: {3}'.format(
+                len(rows), server, processing_time_sec, resp.get('queryId', 0)))
+            print('')
 
     def print_table_header_separator(self, widths):
         header_parts = []
@@ -99,13 +115,19 @@ class ResponseFormatter(object):
         print(self.header_divider.join(header_parts))
 
     def transform_column_title(self, column):
-        if column in TIME_COLUMNS:
+        if column in TIME_COLUMNS or column in TIME_ISO8601_COLUMNS:
             if self.time_format == TIME_FORMAT_ISO_UTC:
-                return column + ' (utc)'
+                return self.map_column_name(column) + ' (utc)'
             elif self.time_format == TIME_FORMAT_ISO_LOCAL:
-                return column + ' (local)'
+                return self.map_column_name(column) + ' (local)'
             else:
-                return column
+                return self.map_column_name(column)
+        else:
+            return self.map_column_name(column)
+
+    def map_column_name(self, column):
+        if self.column_title_mapping is not None:
+            return self.column_title_mapping.get(column, column)
         else:
             return column
 
@@ -119,10 +141,23 @@ class ResponseFormatter(object):
 
         if field_name in TIME_COLUMNS:
             if self.time_format == TIME_FORMAT_ISO_UTC:
-                value = datetime.datetime.utcfromtimestamp(float(value) / 1000.0)
-                return value.isoformat(' ')
+                dt = datetime.datetime.utcfromtimestamp(float(value) / 1000.0)
+                return dt.isoformat(' ')
             elif self.time_format == TIME_FORMAT_ISO_LOCAL:
                 time_as_dt = datetime.datetime.fromtimestamp(float(value) / 1000.0)
+                return time_as_dt.isoformat(' ')
+            else:
+                return value
+
+        if field_name in TIME_ISO8601_COLUMNS:
+            # 2022-01-12T14:30:00.746375Z
+            dt = dateutil.parser.parse(value)
+            seconds = (dt - epoch).total_seconds()
+            if self.time_format == TIME_FORMAT_ISO_UTC:
+                dt = datetime.datetime.utcfromtimestamp(seconds)
+                return dt.isoformat(' ')
+            elif self.time_format == TIME_FORMAT_ISO_LOCAL:
+                time_as_dt = datetime.datetime.fromtimestamp(seconds)
                 return time_as_dt.isoformat(' ')
             else:
                 return value
@@ -135,6 +170,9 @@ class ResponseFormatter(object):
 
         if field_name in PERCENTAGE_VALUE_FIELDS and value and isinstance(value, numbers.Number):
             return percentage_fmt(value)
+
+        if field_name in BOOLEAN_VALUE_FIELDS and value is not None:
+            return str(value)
 
         if isinstance(value, basestring):
             return value.encode("utf-8").rstrip()

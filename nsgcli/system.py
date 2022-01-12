@@ -120,7 +120,7 @@ class SystemCommands(sub_command.SubCommand, object):
     def __init__(self, base_url, token, net_id, time_format=response_formatter.TIME_FORMAT_MS, region=None):
         super(SystemCommands, self).__init__(base_url, token, net_id, region)
         self.current_region = region
-        self.table_formatter = response_formatter.ResponseFormatter(time_format)
+        self.table_formatter = response_formatter.ResponseFormatter(time_format=time_format)
         if region is None:
             self.prompt = 'show system # '
         else:
