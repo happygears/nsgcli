@@ -130,7 +130,9 @@ discovery resume                      resume discovery
 
     def do_status(self, arg):
         comps = arg.split(' ')
-        request = 'v2/ui/net/{0}/reports/discovery/list?limit=10&q={1}&most_recent=false&s=createdAt&fields={2}'.format(
+        # query must sort by createdAt in descending order because we take 10 entries with offset 0, so to get
+        # 10 most recent ones, we have to sort in descending order
+        request = 'v2/ui/net/{0}/reports/discovery/list?limit=10&q={1}&most_recent=false&s=createdAt&desc&fields={2}'.format(
             self.netid, comps[0], ','.join(DISCOVERY_STATUS_FIELDS))
         response = self.basic_command(request)
         self.print_status(response, DISCOVERY_STATUS_FIELDS)
@@ -141,9 +143,12 @@ discovery resume                      resume discovery
         statuses = response['reports']
         # repackage response
         resp = {'columns': [{'text': f} for f in fields], 'rows': []}
+        rows = []
         for status in statuses:
             row = [status[f] for f in fields]
-            resp['rows'].append(row)
+            rows.append(row)
+        # reverse list of rows to make the most recent report appear at the bottom
+        resp['rows'] = list(reversed(rows))
         table_formatter.print_result_as_table(resp)
 
     def basic_command(self, request, data=None):
