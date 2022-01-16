@@ -130,7 +130,7 @@ discovery resume                      resume discovery
 
     def do_status(self, arg):
         comps = arg.split(' ')
-        request = 'v2/ui/net/{0}/reports/discovery/list?limit=10&q={1}&most_recent=false&s=createdAt&desc&fields={2}'.format(
+        request = 'v2/ui/net/{0}/reports/discovery/list?limit=10&q={1}&most_recent=false&s=createdAt&fields={2}'.format(
             self.netid, comps[0], ','.join(DISCOVERY_STATUS_FIELDS))
         response = self.basic_command(request)
         self.print_status(response, DISCOVERY_STATUS_FIELDS)
