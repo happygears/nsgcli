@@ -84,16 +84,11 @@ discovery resume                      resume discovery
                     print('Discovery is paused')
                     print()
                 # both 'in progress' and 'queue' are lists of dictionaries. Order matters.
-                in_progress = resp_dict['inProgress']
+                queue = resp_dict.get('queue', [])
+                communicating = resp_dict.get('inProgress', []) or resp_dict.get('communicating', [])
+                pending_processing = resp_dict.get('pendingProcessing', [])
+                currently_processing = resp_dict.get('currentlyProcessing', [])
                 discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
-                if in_progress:
-                    print('Discovery tasks in progress:')
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in in_progress:
-                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'],
-                                                            task['duration']))
-                    print()
-                queue = resp_dict['queue']
                 if queue:
                     print('Queue:')
                     print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
@@ -102,6 +97,24 @@ discovery resume                      resume discovery
                                                             task['duration']))
                 else:
                     print('Discovery queue is empty')
+                    print()
+                if communicating:
+                    print('Discovery tasks in progress (unordered because tasks are executed in parallel):')
+                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
+                    for task in communicating:
+                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'],
+                                                            task['duration']))
+                    print()
+                else:
+                    print('Discovery servers are idle')
+                    print()
+                if pending_processing:
+                    print('Pending processing (the first device is the next up): {0}'.format(len(pending_processing)))
+                    print(','.join(reversed(pending_processing)))
+                    print()
+                if currently_processing:
+                    print('Currently processing device: {}'.format(currently_processing))
+                    print()
 
     def do_submit(self, arg):
         comps = arg.split(' ')
