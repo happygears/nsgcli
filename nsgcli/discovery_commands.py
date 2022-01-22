@@ -54,7 +54,7 @@ discovery queue                       shows current state of discovery queue
 discovery submit dev1 dev2 dev3       put devices in front of the queue. Devices can be
                                       identified by deviceID, name, sysName or address
 
-discovery status dev                  print status of last 5 discovery attempts for the device 
+discovery status dev                  print status of last 10 discovery attempts for the device 
                                       identified by deviceID, name or address
 
 discovery pause                       pause discovery. In-progress discovery processes will finish
@@ -91,37 +91,39 @@ discovery resume                      resume discovery
                 discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
                 if queue:
                     print('Queue:')
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in queue:
-                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'],
-                                                            task['duration']))
+                    self.print_queue_contents(queue,
+                                              sort_column='duration',
+                                              headers=['device ID', 'name', 'address', 'duration, sec'],
+                                              columns=['deviceID', 'name', 'address', 'duration'])
                 else:
                     print('Discovery queue is empty')
-                    print()
+                print()
                 if communicating:
                     print('Discovery tasks in progress (unordered because tasks are executed in parallel):')
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in communicating:
-                        print(discovery_queue_format.format(task['deviceID'], task['name'], task['address'],
-                                                            task['duration']))
-                    print()
+                    self.print_queue_contents(communicating,
+                                              sort_column='duration',
+                                              headers=['device ID', 'name', 'address', 'duration, sec'],
+                                              columns=['deviceID', 'name', 'address', 'duration'])
                 else:
                     print('Discovery servers are idle')
-                    print()
+                print()
                 if pending_processing:
                     print('Pending processing (the last device is the next up): {0}'.format(len(pending_processing)))
-                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
-                    for task in sorted(pending_processing, key=lambda t: t['timestamp'], reverse=True):
-                        timestamp = task.get('timestamp', '')
-                        duration = task.get('duration', '')
-                        device_id = task['id']
-                        device_name = task['name']
-                        device_address = task['address']
-                        print(discovery_queue_format.format(device_id, device_name, device_address, duration))
+                    self.print_queue_contents(pending_processing,
+                                              sort_column='duration',
+                                              headers=['device ID', 'name', 'address', 'duration, sec'],
+                                              columns=['id', 'name', 'address', 'duration'])
                     print()
                 if currently_processing:
                     print('Currently processing device: {}'.format(currently_processing))
                     print()
+
+    def print_queue_contents(self, queue, sort_column, headers, columns):
+        discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
+        print(discovery_queue_format.format(*headers))
+        for task in sorted(queue, key=lambda t: t[sort_column]):
+            column_values = [task[c] for c in columns]
+            print(discovery_queue_format.format(*column_values))
 
     def do_submit(self, arg):
         comps = arg.split(' ')
