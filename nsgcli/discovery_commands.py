@@ -109,8 +109,15 @@ discovery resume                      resume discovery
                     print('Discovery servers are idle')
                     print()
                 if pending_processing:
-                    print('Pending processing (the first device is the next up): {0}'.format(len(pending_processing)))
-                    print(','.join(reversed(pending_processing)))
+                    print('Pending processing (the last device is the next up): {0}'.format(len(pending_processing)))
+                    print(discovery_queue_format.format('device ID', 'name', 'address', 'duration, sec'))
+                    for task in sorted(pending_processing, key=lambda t: t['timestamp'], reverse=True):
+                        timestamp = task.get('timestamp', '')
+                        duration = task.get('duration', '')
+                        device_id = task['id']
+                        device_name = task['name']
+                        device_address = task['address']
+                        print(discovery_queue_format.format(device_id, device_name, device_address, duration))
                     print()
                 if currently_processing:
                     print('Currently processing device: {}'.format(currently_processing))
