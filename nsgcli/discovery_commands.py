@@ -88,21 +88,16 @@ discovery resume                      resume discovery
                 communicating = resp_dict.get('inProgress', []) or resp_dict.get('communicating', [])
                 pending_processing = resp_dict.get('pendingProcessing', [])
                 currently_processing = resp_dict.get('currentlyProcessing', [])
-                discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
                 if queue:
                     print('Queue:')
-                    self.print_queue_contents(queue,
-                                              sort_column='duration',
-                                              headers=['device ID', 'name', 'address', 'duration, sec'],
+                    self.print_queue_contents(queue, headers=['device ID', 'name', 'address', 'duration, sec'],
                                               columns=['deviceID', 'name', 'address', 'duration'])
                 else:
                     print('Discovery queue is empty')
                 print()
                 if communicating:
                     print('Discovery tasks in progress (unordered because tasks are executed in parallel):')
-                    self.print_queue_contents(communicating,
-                                              sort_column='duration',
-                                              headers=['device ID', 'name', 'address', 'duration, sec'],
+                    self.print_queue_contents(communicating, headers=['device ID', 'name', 'address', 'duration, sec'],
                                               columns=['deviceID', 'name', 'address', 'duration'])
                 else:
                     print('Discovery servers are idle')
@@ -110,7 +105,6 @@ discovery resume                      resume discovery
                 if pending_processing:
                     print('Pending processing (the last device is the next up): {0}'.format(len(pending_processing)))
                     self.print_queue_contents(pending_processing,
-                                              sort_column='duration',
                                               headers=['device ID', 'name', 'address', 'duration, sec'],
                                               columns=['id', 'name', 'address', 'duration'])
                     print()
@@ -118,10 +112,14 @@ discovery resume                      resume discovery
                     print('Currently processing device: {}'.format(currently_processing))
                     print()
 
-    def print_queue_contents(self, queue, sort_column, headers, columns):
+    def print_queue_contents(self, input_list, headers, columns, sort_column=None):
         discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
         print(discovery_queue_format.format(*headers))
-        for task in sorted(queue, key=lambda t: t[sort_column]):
+        if sort_column is not None:
+            sorted_list = sorted(input_list, key=lambda t: t[sort_column])
+        else:
+            sorted_list = input_list
+        for task in sorted_list:
             column_values = [task[c] for c in columns]
             print(discovery_queue_format.format(*column_values))
 
