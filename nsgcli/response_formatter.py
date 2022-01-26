@@ -134,6 +134,8 @@ class ResponseFormatter(object):
     def transform_value(self, field_name, value):
         if value == '*':
             return value
+        if value is None or value == 'NULL':
+            return 'NULL'
 
         if field_name in ['systemUptime', 'processUptime']:
             td = datetime.timedelta(0, float(value))
