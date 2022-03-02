@@ -120,7 +120,13 @@ class NsgGrokCommandLine(Cmd):
             if self.pattern:
                 data['pattern'] = self.pattern
 
-            response = nsgcli.api.call(self.base_url, 'POST', request, data, token=self.token)
+                response = nsgcli.api.call(self.base_url,
+                                           'POST',
+                                           request,
+                                           data,
+                                           token=self.token,
+                                           timeout=180,
+                                           headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
         except Exception as ex:
             return 503, ex
         else:
