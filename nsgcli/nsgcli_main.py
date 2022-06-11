@@ -15,6 +15,7 @@ import index
 import show
 import search
 import agent_commands
+import device_commands
 import discovery_commands
 import exec_commands
 import snmp_commands
@@ -36,6 +37,7 @@ FIND_AGENT_ARGS = ['find_agent']
 SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start', 'pause', 'resume', 'submit', 'status']
 HUD_ARGS = ['reset']
+DEVICE_ARGS = ['download']
 NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schema
 
 
@@ -221,6 +223,28 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_discovery(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DISCOVERY_ARGS)
+
+    ##########################################################################################
+    def do_device(self, arg):
+        """
+        download device. Supported commands:
+
+        device download (devID|name)
+
+        :param arg: command, possibly with argument
+        """
+        sub_cmd = device_commands.DeviceCommands(self.base_url, self.token, self.netid, self.time_format)
+        if not arg:
+            sub_cmd.cmdloop()
+        else:
+            sub_cmd.onecmd(arg)
+
+    def help_device(self):
+        sub_cmd = device_commands.DeviceCommands(self.base_url, self.token, self.netid, self.time_format)
+        sub_cmd.help()
+
+    def complete_device(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, DEVICE_ARGS)
 
     ##########################################################################################
     def do_hud(self, arg):
