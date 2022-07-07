@@ -6,13 +6,10 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-
-from __future__ import print_function
-
 import json
 
-import api
-import sub_command
+from . import api
+from . import sub_command
 
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})
@@ -127,4 +124,3 @@ class ExecCommands(sub_command.SubCommand, object):
         else:
             status = 'unknown error'
         return status
-

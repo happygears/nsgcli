@@ -1,0 +1,32 @@
+[
+    {
+        "id": 1,
+        "name": "labdcbig3",
+        "user": "nsgcli",
+        "enabled": true,
+        "generation": 81,
+        "refreshIntervalSec": 60,
+        "updatedAt": 1646006400000,
+        "configUpdatedAt": 1656027832578,
+        "status": {
+            "status": "running",
+            "started": 1656468005000,
+            "completed": null,
+            "ownerProcess": "28@labdcbig3-nsg-manager-1",
+            "lastDuration": 0,
+            "averageDuration": 0.0,
+            "details": ""
+        },
+        "pending": null,
+        "version": "7.1.0-b111a (net6685)",
+        "build": "7.1.0-net6685-b111a",
+        "uuid": "90380f0a-98b8-11ec-923d-cdc8e22ae0a7",
+        "discoverable": true,
+        "singleUser": false,
+        "maintenance": false,
+        "licenseInfo": {
+            "currentDeviceCount": 37061,
+            "licensedDeviceCount": 50000
+        }
+    }
+]

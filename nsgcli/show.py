@@ -6,20 +6,16 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import datetime
-import dateutil.relativedelta
 import json
 import time
-
 from typing import Dict, Any
 
-import discovery_commands
 import nsgcli.api
+import nsgcli.response_formatter
 import nsgcli.sub_command
 import nsgcli.system
-import nsgcli.response_formatter
+from . import discovery_commands
 
 
 class ShowCommands(nsgcli.sub_command.SubCommand, object):
@@ -139,7 +135,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         sub_cmd = discovery_commands.DiscoveryCommands(self.base_url, self.token, self.netid, None)
         sub_cmd.do_queue(arg)
 
-##########################################################################################
+    ##########################################################################################
     def do_status(self, _):
         """
         Request server status
@@ -202,7 +198,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                         print(response.content)
                     else:
                         filtered = {}
-                        for k in response.keys():
+                        for k in list(response.keys()):
                             if k in ['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule',
                                      'generation']:
                                 continue
@@ -260,7 +256,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                      }
             resp = json.loads(response.content)
             column_width = {}  # type: Dict[Any, Any]
-            for column_name in title.keys():
+            for column_name in list(title.keys()):
                 self.update_column_width(title, column_name, column_width)
             for row in resp:
                 converted = self.convert_obj(row, ordered_columns)
@@ -270,7 +266,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
             table_columns = []
             for column_name in ordered_columns:
                 table_columns.append('{{0[{0}]:<{1}}}'.format(column_name, column_width.get(column_name)))
-            format_str = u' | '.join(table_columns)
+            format_str = ' | '.join(table_columns)
             title_line = format_str.format(title)
             print(title_line)
             print('-' * len(title_line))
@@ -303,7 +299,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
 
     def update_column_width(self, obj, column_name, col_wid_dict):
         w = col_wid_dict.get(column_name, 0)
-        txt = unicode(obj.get(column_name, ''))
+        txt = str(obj.get(column_name, ''))
         w = max(w, len(txt))
         col_wid_dict[column_name] = w
 

@@ -6,13 +6,11 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
 
-import api
-import response_formatter
-import sub_command
+from . import api
+from . import response_formatter
+from . import sub_command
 
 DISCOVERY_STATUS_FIELDS = ['deviceId', 'address', 'reportName', 'generation',
                            'discoveryStartTime', 'discoveryFinishTime', 'processingFinishTime', 'lagSec',
@@ -194,4 +192,3 @@ discovery resume                      resume discovery
                     print('ERROR: {0}'.format(err))
                     return None
             return json.loads(response.content)
-

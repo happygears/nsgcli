@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 
 import getopt
 import os
 import sys
+
 import nsgcli.nsgql_main
 import nsgcli.response_formatter
 from nsgcli.version import __version__
-
 
 usage_msg = """
 This script executes NsgQL queries provided on command line or interactively

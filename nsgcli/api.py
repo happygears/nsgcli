@@ -6,21 +6,16 @@ This module implements the NetSpyGlass API
 
 """
 
-from __future__ import print_function
-
 import copy
 import json
 
-# from requests.packages import urllib3
-
 import urllib3
-
 from requests_unixsocket import Session
 
 try:
     import http.client as httplib
 except ImportError:
-    import httplib
+    import http.client
 
 
 def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
@@ -39,15 +34,17 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers
     :param headers:      - http request headers
     :param stream:       - if True, return result as a stream (default=True)
     """
-# disable warning
-# InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised.
-# See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+    # disable warning
+    # InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised.
+    # See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
     urllib3.disable_warnings()
 
     if 'http+unix://' in base_url:
-        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers, stream=stream)
+        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers,
+                                       stream=stream)
     else:
-        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers, stream=stream)
+        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers,
+                                stream=stream)
 
 
 def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, headers=None, stream=True):
@@ -70,7 +67,6 @@ def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=
 
 
 def make_call(url, method, data, timeout, headers, stream=False):
-
     # timeout_obj = urllib3.Timeout(connect=timeout, read=timeout)
 
     session = Session()

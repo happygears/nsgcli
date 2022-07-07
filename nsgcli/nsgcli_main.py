@@ -6,20 +6,18 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
 
-import api
-import index
-import show
-import search
-import agent_commands
-import device_commands
-import discovery_commands
-import exec_commands
-import snmp_commands
-import sub_command
+from . import agent_commands
+from . import api
+from . import device_commands
+from . import discovery_commands
+from . import exec_commands
+from . import index
+from . import search
+from . import show
+from . import snmp_commands
+from . import sub_command
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
@@ -83,7 +81,7 @@ class NsgCLI(sub_command.SubCommand, object):
         except Exception as ex:
             return 503, ex
         else:
-            print(response.content)
+            print(response.content.decode(response.encoding))
 
     ##########################################################################################
     def do_show(self, arg):

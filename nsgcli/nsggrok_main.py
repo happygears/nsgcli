@@ -6,12 +6,10 @@ This module implements Cmd commands that parses text input with Grok using grok-
 
 """
 
-from __future__ import print_function
-
-import os
-import sys
-import select
 import json
+import os
+import select
+import sys
 from cmd import Cmd
 
 import nsgcli.api
