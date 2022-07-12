@@ -39,17 +39,60 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers
     # See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
     urllib3.disable_warnings()
 
-    if 'http+unix://' in base_url:
-        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers,
-                                       stream=stream)
+    return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers,
+                            stream=stream)
+
+
+def call_with_response_handling(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None,
+                                stream=True, format='plain'):
+    url = concatenate_url(base_url, uri_path)
+    if headers is None:
+        send_headers = {}
     else:
-        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers,
-                                stream=stream)
+        send_headers = copy.copy(headers)
+    if token is not None:
+        send_headers['X-NSG-Auth-API-Token'] = token
+    response =  make_call(url, method, data, timeout, headers=send_headers, stream=stream)
+    error_message = check_response(response)
+    if error_message is None:
+        return decode_response(response, format)
 
 
-def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, headers=None, stream=True):
-    url = make_socket_url(base_url, uri_path)
-    return make_call(url, method, data, timeout, headers={}, stream=stream)
+def get_error(response):
+    """
+    if the response is in standard form (a dictionary with key 'error' or 'success') then
+    this function finds and returns the value of the key 'error'. Otherwise it returns
+    the whole response as a string
+    """
+    if isinstance(response, dict):
+        return response.get('error', str(response))
+    else:
+        return str(response)
+
+
+def handle_error_response(response):
+    MSG_TEMPLATE = ("An error occurred when calling the operation: "
+                    "{0} and api error code: {1}")
+
+    status_code = response.status_code
+    error = get_error(response)
+    error_message = MSG_TEMPLATE.format(error, status_code)
+    print(error_message)
+    return error_message
+
+
+def check_response(response):
+    status_code = response.status_code
+    if status_code < 200 or status_code >= 300:
+        return handle_error_response(response)
+    return None
+
+
+def decode_response(response, format):
+    if format == 'json':
+        return json.loads(response.content)
+    else:
+        return response.content
 
 
 def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, headers=None, stream=True):
@@ -81,11 +124,6 @@ def make_call(url, method, data, timeout, headers, stream=False):
     if response.encoding is None:
         response.encoding = 'utf-8'
     return response
-
-
-def make_socket_url(base_url, uri_path):
-    url = base_url.replace('/', '%2F').replace(':%2F%2F', '://')
-    return concatenate_url(url, uri_path)
 
 
 def concatenate_url(base_url, uri_path):
