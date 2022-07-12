@@ -198,7 +198,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                         print(response.content)
                     else:
                         filtered = {}
-                        for k in list(response.keys()):
+                        for k in response.keys():
                             if k in ['links', 'nodes', 'path', 'singleUser', 'defaultVar', 'rule', 'linkRule',
                                      'generation']:
                                 continue
@@ -256,7 +256,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
                      }
             resp = json.loads(response.content)
             column_width = {}  # type: Dict[Any, Any]
-            for column_name in list(title.keys()):
+            for column_name in title.keys():
                 self.update_column_width(title, column_name, column_width)
             for row in resp:
                 converted = self.convert_obj(row, ordered_columns)

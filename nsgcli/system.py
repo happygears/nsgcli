@@ -363,7 +363,7 @@ class SystemCommands(sub_command.SubCommand, object):
                 member[field] = self.table_formatter.transform_value(field, value)
 
         for member in sorted_members:
-            for field in list(field_width.keys()):
+            for field in field_width.keys():
                 value = str(member.get(field, ''))
                 if field_width.get(field, 0) < len(value):
                     field_width[field] = len(value)
@@ -372,7 +372,7 @@ class SystemCommands(sub_command.SubCommand, object):
 
         format_lst = ['{m[%s]:<%d}' % (field, field_width[field]) for field in field_width.keys()]
         format_str = '    '.join(format_lst)
-        total_width = reduce(lambda x, y: x + y, list(field_width.values()))
+        total_width = reduce(lambda x, y: x + y, field_width.values())
         total_width += len(field_width) * 4
         # print(format_str)
         print(format_str.format(m=field_names))

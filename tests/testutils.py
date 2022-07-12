@@ -15,14 +15,14 @@ nsgql = None
 def get_nsgcli():
     global nsg_cli
     if nsg_cli is None:
-        nsg_cli = NsgCLI(base_url="https://base_url", token="token", netid=1)
+        nsg_cli = NsgCLI(base_url='https://base_url', token='token', netid=1)
     return nsg_cli
 
 
 def get_nsgql():
     global nsgql
     if nsgql is None:
-        nsgql = NsgQLCommandLine(base_url="https://base_url", token="token", netid=1)
+        nsgql = NsgQLCommandLine(base_url='https://base_url', token='token', netid=1)
     return nsgql
 
 
@@ -47,7 +47,7 @@ def run_cmd(cmd, cmdline):
 
 def read_file(file_name, as_text=True):
     current_path = Path(os.path.dirname(os.path.realpath(__file__)))
-    file_path = current_path / "fixtures" / file_name
+    file_path = current_path / 'fixtures' / file_name
     if as_text:
         return file_path.read_text()
     else:
