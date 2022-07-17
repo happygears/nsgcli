@@ -52,10 +52,17 @@ def call_with_response_handling(base_url, method, uri_path, data=None, token=Non
         send_headers = copy.copy(headers)
     if token is not None:
         send_headers['X-NSG-Auth-API-Token'] = token
-    response =  make_call(url, method, data, timeout, headers=send_headers, stream=stream)
-    error_message = check_response(response)
-    if error_message is None:
-        return decode_response(response, format)
+    try:
+        response = make_call(url, method, data, timeout, headers=send_headers, stream=stream)
+    except Exception:
+        # todo: raise error for exception and error_message
+        print('Error when making request to endpoint: {}'.format(url))
+    else:
+        deserialized_response = None
+        error = check_response(response)
+        if error is None:
+            deserialized_response = decode_response(response, format)
+        return deserialized_response, error
 
 
 def get_error(response):
