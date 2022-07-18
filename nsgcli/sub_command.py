@@ -7,7 +7,6 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import cmd
-import json
 
 from . import api
 
@@ -154,33 +153,22 @@ class SubCommand(cmd.Cmd, object):
             req = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, command, address, cmd_args)
 
         # print(response)
-
-        try:
-            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
-            response = api.call(self.base_url, 'GET', req, token=self.token, headers=headers, stream=True)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
-                        return
-
-                # This call returns list of AgentCommandResponse objects in json format
-                # print(response)
-                replies = []
-                for acr in api.transform_remote_command_response_stream(response):
-                    status = self.parse_status(acr)
-                    if not hide_errors or status == 'ok':
-                        replies.append((status, HashableAgentCommandResponse(acr)))
-                if deduplicate_replies:
-                    for status, acr in set(replies):
-                        self.print_agent_response(acr, status)
-                else:
-                    for status, acr in replies:
-                        self.print_agent_response(acr, status)
+        headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+        response, error = api.call(self.base_url, 'GET', req, token=self.token,
+                                   headers=headers, stream=True, response_format='json_array',
+                                   error_format='json_array')
+        if error is None:
+            replies = []
+            for acr in response:
+                status = self.parse_status(acr)
+                if not hide_errors or status == 'ok':
+                    replies.append((status, HashableAgentCommandResponse(acr)))
+            if deduplicate_replies:
+                for status, acr in set(replies):
+                    self.print_agent_response(acr, status)
+            else:
+                for status, acr in replies:
+                    self.print_agent_response(acr, status)
 
     def print_agent_response(self, acr, status):
         try:

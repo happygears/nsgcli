@@ -6,8 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-import json
-
 from . import api
 from . import response_formatter
 from . import sub_command
@@ -48,12 +46,8 @@ class SearchCommand(sub_command.SubCommand, object):
                     'format': 'table'
                 }
             )
-        try:
-            response = api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, json.loads(response.content)
+        return api.call(self.base_url, 'POST', path, data=nsgql, token=self.token,
+                        stream=True)
 
     def do_device(self, arg):
         """
@@ -64,17 +58,12 @@ class SearchCommand(sub_command.SubCommand, object):
         query = 'SELECT DISTINCT id,name,address,Vendor,SerialNumber,boxDescr FROM devices ' \
                 'WHERE (name REGEXP "^{0}.*$" OR address = "{0}" OR SerialNumber = "{0}" OR boxDescr REGEXP ".*{0}.*") ' \
                 'AND Role NOT IN ("Cluster", "SimulatedNode")'
-        status, response = self.nsgql_call(query.format(arg))
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.nsgql_call(query.format(arg))
+        if error is None:
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
         request = 'v2/ui/net/{0}/status'.format(self.netid)
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return 200, json.loads(response.content)
+        response, error = api.call(self.base_url, 'POST', request, token=self.token, response_format='json')
+        if error is None:
+            return response

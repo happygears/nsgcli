@@ -6,8 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-import json
-
 from . import api
 from . import sub_command
 
@@ -159,21 +157,12 @@ class AgentCommands(sub_command.SubCommand, object):
         else:
             request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
 
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token, stream=True)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
-                        return
-
-                for acr in api.transform_remote_command_response_stream(response):
-                    status = self.parse_status(acr)
-                    self.print_agent_response(acr, status)
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
+                                   response_format='json_array')
+        if error is not None:
+            for acr in response:
+                status = self.parse_status(acr)
+                self.print_agent_response(acr, status)
 
     def do_probe_snmp(self, arg):
         """
@@ -188,21 +177,12 @@ class AgentCommands(sub_command.SubCommand, object):
         else:
             request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'discover-snmp-access', cmd_args)
 
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token, stream=True)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
-                        return
-
-                for acr in api.transform_remote_command_response_stream(response):
-                    status = self.parse_status(acr)
-                    self.print_agent_response(acr, status)
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
+                                   response_format='json_array')
+        if error is not None:
+            for acr in response:
+                status = self.parse_status(acr)
+                self.print_agent_response(acr, status)
 
     def do_find(self, args):
         """
@@ -304,37 +284,13 @@ class AgentCommands(sub_command.SubCommand, object):
         if len(args) < 4:
             args.append('2000')
 
-        req = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, self.current_region, ' '.join(args))
+        request = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, self.current_region, ' '.join(args))
+
         # This call returns list of AgentCommandResponse objects in json format
-        try:
-            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
-            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True, headers=headers, timeout=7200)
-        except Exception as ex:
-            return 503, ex
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
-                        return
-                for acr in api.transform_remote_command_response_stream(response):
-                    # pass
-                    # print(acr)
-                    status = self.parse_status(acr)
-                    self.print_snmp_response(acr, status)
-
-    def print_snmp_response(self, acr, status):
-        try:
-            for line in acr['response']:
-                print('{0} | {1}'.format(acr['agent'], line))
-        except Exception as e:
-            print(e)
-            print(acr)
-
-    def get_error(self, response):
-        if isinstance(response, list):
-            return self.get_error(response[0])
-        if isinstance(response, str) or isinstance(response, bytes):
-            return response
-        return response.get('error', '')
+        headers = {'Accept-Encoding': ''}
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
+                                   headers=headers, response_format='json_array')
+        if error is not None:
+            for acr in response:
+                status = self.parse_status(acr)
+                self.print_agent_response(acr, status)

@@ -35,17 +35,5 @@ class DeviceCommands(sub_command.SubCommand, object):
 
     def do_download(self, arg):
         request = 'v2/nsg/test/net/{0}/devices/{1}?source=devicepool&format=pbjson'.format(self.netid, arg)
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-            return None
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        err = self.get_error(json.loads(line))
-                        print('ERROR: {0}'.format(err))
-                        return None
-                print(response.content.decode(response.encoding))
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, error_format='json_array')
+        print(response.content.decode(response.encoding))

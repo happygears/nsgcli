@@ -75,11 +75,8 @@ class NsgCLI(sub_command.SubCommand, object):
         "ping" NetSpyGlass server this cli client connects to. This returns "ok" if the server is up and running
         """
         request = 'v2/ping/net/{0}/se'.format(self.netid)
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
+        response, error = api.call(self.base_url, 'GET', request, token=self.token)
+        if error is None:
             print(response.content.decode(response.encoding))
 
     ##########################################################################################
@@ -376,16 +373,6 @@ class NsgCLI(sub_command.SubCommand, object):
         """
         execute simple command via API call and return deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'GET', request, data=data, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        err = self.get_error(json.loads(line))
-                        print('ERROR: {0}'.format(err))
-                        return None
-                return json.loads(response.content)
+        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json',
+                                   error_format='json_array')
+        return response

@@ -7,7 +7,6 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import collections
-import json
 from functools import cmp_to_key
 from functools import reduce
 
@@ -133,13 +132,8 @@ class SystemCommands(sub_command.SubCommand, object):
         makes API call v2/nsg/cluster/net/{0}/status and returns the response. Note that
         the server does not 'json-stream' response for this API call
         """
-        try:
-            response = api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
-                                token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, json.loads(response.content)
+        return api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
+                                               token=self.token, response_format='json')
 
     def nsgql_call(self, query):
         """
@@ -158,49 +152,37 @@ class SystemCommands(sub_command.SubCommand, object):
                     'format': 'table'
                 }
             )
-        try:
-            response = api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, json.loads(response.content)
+
+        return api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True, response_format='json')
 
     def help(self):
         print('Show various system parameters and state variables. Arguments: {0}'.format(self.get_args()))
 
     def do_filesystem(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_vars(
                 ['name', 'fsFreeSpace', 'fsTotalSpace', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
                 response)
 
     def do_agent_command_executor(self, arg):
-        status, response = self.nsgql_call(
+        response, error = self.nsgql_call(
             'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
             'FROM poolSize ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        if error is None:
             response = response[0]
             self.table_formatter.print_result_as_table(response)
 
     def do_version(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_vars(
                 ['name', 'nsgVersion', 'revision', 'processUptime', 'updatedAt'],
                 response)
 
     def do_status(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_status(response)
 
     def print_cluster_status(self, status_json):

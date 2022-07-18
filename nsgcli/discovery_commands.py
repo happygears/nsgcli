@@ -6,8 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-import json
-
 from . import api
 from . import response_formatter
 from . import sub_command
@@ -161,34 +159,16 @@ discovery resume                      resume discovery
 
     def get_command(self, request, data=None):
         """
-        execute simple command via API call and return deserialized response
+        executes simple command via API call and returns deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'GET', request, data=data, token=self.token)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-            return None
-        else:
-            return self.deserialize_response(response)
+        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json',
+                                   error_format='json_array')
+        return response
 
     def post_command(self, request, data=None):
         """
-        execute simple command via API call and return deserialized response
+        executes simple command via API call and returns deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'POST', request, data=data, token=self.token)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-            return None
-        else:
-            return self.deserialize_response(response)
-
-    def deserialize_response(self, response):
-        with response:
-            status = response.status_code
-            if status != 200:
-                for line in response.iter_lines():
-                    err = self.get_error(json.loads(line))
-                    print('ERROR: {0}'.format(err))
-                    return None
-            return json.loads(response.content)
+        response, error = api.call(self.base_url, 'POST', request, data=data, token=self.token, response_format='json',
+                                   error_format='json_array')
+        return response

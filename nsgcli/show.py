@@ -42,7 +42,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
 
     def get_status(self):
         request = 'v2/ui/net/{0}/status'.format(self.netid)
-        return nsgcli.api.call_with_response_handling(self.base_url, 'GET', request, token=self.token, format='json')
+        return nsgcli.api.call(self.base_url, 'GET', request, token=self.token, response_format='json')
 
     def get_cache_data(self):
         """
@@ -50,7 +50,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         as a tuple (http_code,json)
         """
         request = 'v2/ui/net/{0}/actions/cache/list'.format(self.netid)
-        return nsgcli.api.call_with_response_handling(self.base_url, 'GET', request, token=self.token, format='json')
+        return nsgcli.api.call(self.base_url, 'GET', request, token=self.token, response_format='json')
 
     ##########################################################################################
     def do_version(self, args):

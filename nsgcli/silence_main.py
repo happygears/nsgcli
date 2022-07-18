@@ -159,21 +159,16 @@ class NetSpyGlassAlertSilenceControl:
         request = '/v2/alerts/net/{0}/silences/'.format(self.netid)
         if silence_id is not None and silence_id > 0:
             request += str(silence_id)
-
-        try:
-            response = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
+        response, error = nsgcli.api.call(self.base_url, 'GET', request, token=self.token)
+        status = response.status_code
+        if status != 200:
+            return status, response
         else:
-            status = response.status_code
-            if status != 200:
-                return status, response
-            else:
-                res = []
-                for dd in json.loads(response.content):
-                    silence = Silence(dd)
-                    res.append(silence)
-            return response.status_code, res
+            res = []
+            for dd in json.loads(response.content):
+                silence = Silence(dd)
+                res.append(silence)
+        return response.status_code, res
 
     def post_data(self, silence):
         """
@@ -185,14 +180,8 @@ class NetSpyGlassAlertSilenceControl:
         request = '/v2/alerts/net/{0}/silences/'.format(self.netid)
         if silence.id is not None and silence.id > 0:
             request += str(silence.id)
-
-        try:
-            # serialized = json.dumps(silence.get_dict())
-            response = nsgcli.api.call(self.base_url, 'POST', request, token=self.token, data=silence.get_dict())
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, response.content
+        response, error = nsgcli.api.call(self.base_url, 'POST', request, token=self.token, data=silence.get_dict())
+        return response.status_code, response.content
 
     def add(self):
         status, res = self.post_data(self.assemble_silence_data())
