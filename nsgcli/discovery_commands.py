@@ -6,6 +6,8 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
+from tabulate import tabulate
+
 from . import api
 from . import response_formatter
 from . import sub_command
@@ -100,15 +102,15 @@ discovery resume                      resume discovery
             print()
 
     def print_queue_contents(self, input_list, headers, columns, sort_column=None):
-        discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
-        print(discovery_queue_format.format(*headers))
+        row_list = []
         if sort_column is not None:
             sorted_list = sorted(input_list, key=lambda t: t[sort_column])
         else:
             sorted_list = input_list
         for task in sorted_list:
             column_values = [task[c] for c in columns]
-            print(discovery_queue_format.format(*column_values))
+            row_list.append(column_values)
+        print(tabulate(row_list, headers))
 
     def do_submit(self, arg):
         comps = arg.split(' ')
