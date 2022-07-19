@@ -5,16 +5,11 @@ This module is part of the nsgcli package
 :license: Apache2, see LICENSE for more details.
 """
 
-from __future__ import print_function
-
 import datetime
-from datetime import tzinfo
+import numbers
+
 import dateutil.parser
 import dateutil.tz
-import numbers
-import time
-import json
-
 import pytz
 
 TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
@@ -176,7 +171,7 @@ class ResponseFormatter(object):
         if field_name in BOOLEAN_VALUE_FIELDS and value is not None:
             return str(value)
 
-        if isinstance(value, basestring):
-            return value.encode("utf-8").rstrip()
+        if isinstance(value, str):
+            return value.rstrip()
         else:
             return value

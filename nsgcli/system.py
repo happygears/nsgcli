@@ -6,16 +6,14 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import collections
-import datetime
 import json
-import time
+from functools import cmp_to_key
+from functools import reduce
 
-import api
-import sub_command
-import response_formatter
+from . import api
+from . import response_formatter
+from . import sub_command
 
 ROLE_MAP = {
     'manager': 'mgr',
@@ -27,6 +25,10 @@ ROLE_MAP = {
     'indexer': 'idx',
     'discovery': 'disc'
 }
+
+
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 
 def score_roles(roles):
@@ -133,7 +135,7 @@ class SystemCommands(sub_command.SubCommand, object):
         """
         try:
             response = api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
-                                       token=self.token)
+                                token=self.token)
         except Exception as ex:
             return 503, ex
         else:
@@ -353,7 +355,7 @@ class SystemCommands(sub_command.SubCommand, object):
         this_server = status_json['name']
 
         # sort members once, and do it before I mangle their names
-        sorted_members = sorted(status_json['members'], cmp=compare_members)
+        sorted_members = sorted(status_json['members'], key=cmp_to_key(compare_members))
         for member in sorted_members:
             update_member(member, this_server)
             for field in names:

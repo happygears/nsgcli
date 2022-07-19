@@ -6,14 +6,10 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-
-from __future__ import print_function
-
 import json
-import types
 
-import api
-import sub_command
+from . import api
+from . import sub_command
 
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})
@@ -132,7 +128,7 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def make_args(self, input_arg):
         args = input_arg.split()
-        args.insert(0, self.agent_name) # agent name must be the first argument
+        args.insert(0, self.agent_name)  # agent name must be the first argument
         return ' '.join(args)
 
     def do_log(self, arg):
@@ -337,8 +333,8 @@ class AgentCommands(sub_command.SubCommand, object):
             print(acr)
 
     def get_error(self, response):
-        if isinstance(response, types.ListType):
+        if isinstance(response, list):
             return self.get_error(response[0])
-        if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
+        if isinstance(response, str) or isinstance(response, bytes):
             return response
         return response.get('error', '')

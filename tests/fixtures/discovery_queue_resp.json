@@ -1,0 +1,126 @@
+{
+    "enabled": true,
+    "paused": false,
+    "communicating": [],
+    "queue": [],
+    "pendingProcessing": [
+        {
+            "sessionId": 38535251882892425,
+            "id": 8563,
+            "name": "s07122sw01",
+            "address": "10.131.216.5",
+            "timestamp": 1656986071.544595000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-5",
+            "duration": 2.971044459,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251881751200,
+            "id": 16464,
+            "name": "s05655ap02",
+            "address": "10.128.204.12",
+            "timestamp": 1656986071.540383000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-2",
+            "duration": 2.975296460,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251880727377,
+            "id": 21903,
+            "name": "s04494cwsw04",
+            "address": "10.176.248.34",
+            "timestamp": 1656986071.537978000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-5",
+            "duration": 2.977725660,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251879965360,
+            "id": 1702,
+            "name": "sdcappm1-2-07m",
+            "address": "10.37.25.43",
+            "timestamp": 1656986071.530388000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-8",
+            "duration": 2.985336260,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251878684532,
+            "id": 30696,
+            "name": "s01638ap01",
+            "address": "10.170.224.11",
+            "timestamp": 1656986071.526589000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-6",
+            "duration": 2.989156360,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251874605142,
+            "id": 17060,
+            "name": "s05546ap06",
+            "address": "10.173.136.16",
+            "timestamp": 1656986071.460511000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-7",
+            "duration": 3.055256360,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251873792524,
+            "id": 29911,
+            "name": "s01836cwsw02",
+            "address": "10.178.220.32",
+            "timestamp": 1656986071.453909000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-7",
+            "duration": 3.061879861,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251871868582,
+            "id": 31037,
+            "name": "s01543sw01",
+            "address": "10.149.208.5",
+            "timestamp": 1656986071.254146000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-7",
+            "duration": 3.261663161,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251872834203,
+            "id": 7310,
+            "name": "s07722ap04",
+            "address": "10.132.68.14",
+            "timestamp": 1656986071.231876000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-3",
+            "duration": 3.283953561,
+            "empty": false
+        },
+        {
+            "sessionId": 38535251870583454,
+            "id": 14253,
+            "name": "s05966ap02",
+            "address": "10.174.128.12",
+            "timestamp": 1656986071.210048000,
+            "state": "COMPLETE",
+            "server": "labdcbig3-nsg-ndd-3",
+            "duration": 3.305806661,
+            "empty": false
+        }
+    ],
+    "currentlyProcessing": null,
+    "currentlyProcessingMulti": [],
+    "currentGeneration": {
+        "generation": 85,
+        "createdAt": "2022-07-03T20:00:05.210Z",
+        "createdAtMs": 1656878405210,
+        "devicesToDiscover": 13334
+    }
+}

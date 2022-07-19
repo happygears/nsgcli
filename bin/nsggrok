@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 
 import getopt
 import os
 import sys
+
 import nsgcli.nsggrok_main
 import nsgcli.response_formatter
 from nsgcli.version import __version__
-
 
 usage_msg = """
 Parse text line or syslog message with grok patterns.
@@ -110,4 +109,3 @@ if __name__ == '__main__':
             script.cmdloop()
     except KeyboardInterrupt as e:
         sys.exit(0)
-

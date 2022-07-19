@@ -6,14 +6,11 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
-import types
 
-import api
-import sub_command
-import system
+from . import api
+from . import sub_command
+from . import system
 
 SNMP_RESPONSE_FORMAT = """
 Source:   {m[agent]} ({m[agentAddress]})
@@ -140,8 +137,8 @@ class SnmpCommands(sub_command.SubCommand, object):
             return 'unknown'
 
     def get_error(self, response):
-        if isinstance(response, types.ListType):
+        if isinstance(response, list):
             return self.get_error(response[0])
-        if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
+        if isinstance(response, str) or isinstance(response, bytes):
             return response
         return response.get('error', '')

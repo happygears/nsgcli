@@ -1,0 +1,12 @@
+[
+    {
+        "exitStatus": 0,
+        "response": [
+            ".1 = STRING: yes"
+        ],
+        "error": "",
+        "uuid": "19acdcd7-f313-11ec-a205-e5c767b52f6d",
+        "agent": "labdcbig3_region-a-6",
+        "status": "OK"
+    }
+]

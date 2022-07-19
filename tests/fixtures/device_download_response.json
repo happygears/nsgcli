@@ -1,0 +1,107 @@
+{
+    "ID": 3388,
+    "name": "s09246ap06",
+    "address": "10.184.232.16",
+    "sysDescription": "",
+    "productName": "",
+    "chassisID": "",
+    "boxDescription": "",
+    "softwareRevision": "",
+    "systemName": "s09246ap06",
+    "reverseDNSName": "",
+    "shortName": "",
+    "interfaceNumber": 0,
+    "SNMPEngineID": "",
+    "unitAddress": "",
+    "isIPForwarding": false,
+    "answersToSNMP": false,
+    "respondsToPing": true,
+    "tags": [
+        "Cid.t74gww"
+    ],
+    "protocols": [],
+    "interfaces": {
+        "0": {
+            "ID": 0,
+            "index": 0,
+            "description": "unknown",
+            "administrativeStatus": 0,
+            "operationalStatus": 0,
+            "physicalAddress": "5c:5b:35:9e:96:e6",
+            "speed": "0",
+            "type": 0,
+            "alias": "",
+            "name": "int0",
+            "highSpeed": "0",
+            "roles": [
+                "RouterInterface",
+                "BroadcastTypeInterface",
+                "SimulatedInterface"
+            ],
+            "tags": [
+                "Cid.1rqq58s"
+            ],
+            "addresses": [
+                "10.184.232.16/32"
+            ],
+            "ATPhysicalAddress": {},
+            "ATNetworkAddress": {},
+            "cosQueues": [],
+            "realRFC1213Index": 0,
+            "alternateIndex": -1
+        }
+    },
+    "virtualServers": {},
+    "serverPools": {},
+    "hardwareComponents": [],
+    "ephemeralComponents": [],
+    "ipsecTunnels": {},
+    "protocolDescriptors": [],
+    "chassisAlarms": [],
+    "firewallCounters": {},
+    "loadBalancers": {},
+    "MPLSTunnels": {},
+    "cosFcName": {},
+    "cosFcQueueNumber": {},
+    "ipCIDRRouteNumberSupported": false,
+    "inetCIDRRouteNumberSupported": false,
+    "ipv6RouteNumberSupported": false,
+    "ISISOn": false,
+    "ISISSysId": "",
+    "ISISCircuitIfIndex": {},
+    "ISISCircuitLevel1Metric": {},
+    "ISISCircuitLevel2Metric": {},
+    "OSPFAdminStatus": 2,
+    "OSPFRouterId": "",
+    "OSPFAreaStatus": {},
+    "OSPFIfAreaId": {},
+    "OSPFIfState": {},
+    "azureResources": {},
+    "vpnControlConnections": {},
+    "OIDSupport": {},
+    "lastContactTime": "1970-01-01T00:00:00Z",
+    "nameFromConfig": "s09246ap06",
+    "sysContact": "",
+    "sysLocation": "",
+    "pollingConfigurations": [
+        "<ping>"
+    ],
+    "channel": {
+        "name": "emulator",
+        "type": "snmpv2",
+        "version": 2,
+        "context": ""
+    },
+    "generation": 85,
+    "signature": "s09246ap06|10.184.232.16",
+    "sysObjectId": "",
+    "lastDiscoveryAttemptTime": "2022-07-01T01:53:20.257Z",
+    "lastSuccessfulDiscoveryTime": "2022-07-01T01:53:20.257Z",
+    "uptimeAtTimeOfDiscovery": "1970-01-01T00:00:00Z",
+    "discoveryState": "ds_complete",
+    "vlanNames": {},
+    "roles": [
+        "dr_server"
+    ],
+    "tagsScriptSignature": "39fa1eea870cc9ea695303f114f2369d"
+}

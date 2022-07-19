@@ -1,0 +1,4 @@
+[{"response":[".1 = STRING: traceroute to 10.0.15.150 (10.0.15.150), 30 hops max, 60 byte packets"],"exitStatus":0,"error":"","uuid":"3160fc80-b447-11ec-b068-b338bf74957f","agent":"","status":"OK"}
+  {"response":[".1 = STRING:  1  10.0.15.150 (10.0.15.150)  0.092 ms  0.021 ms  0.021 ms"],"exitStatus":0,"error":"","uuid":"3160fc80-b447-11ec-b068-b338bf74957f","agent":"","status":"OK"}
+  {"response":[],"exitStatus":0,"error":"","uuid":"3160fc80-b447-11ec-b068-b338bf74957f","agent":"carrier-docker","status":"OK"}
+]

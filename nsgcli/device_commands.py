@@ -6,12 +6,10 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
 
-import api
-import sub_command
+from . import api
+from . import sub_command
 
 HELP = """
 Commands that operate with NSG devices: 
@@ -50,4 +48,4 @@ class DeviceCommands(sub_command.SubCommand, object):
                         err = self.get_error(json.loads(line))
                         print('ERROR: {0}'.format(err))
                         return None
-                print(response.content)
+                print(response.content.decode(response.encoding))

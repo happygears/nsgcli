@@ -1,14 +1,13 @@
 #!/usr/bin/env python
 
-from __future__ import print_function
 
 import getopt
 import os
 import sys
+
 import nsgcli.nsgcli_main
 import nsgcli.response_formatter
 from nsgcli.version import __version__
-
 
 usage_msg = """
 Interactive NetSpyGlass control script. This script can only communicate with 
@@ -88,7 +87,8 @@ if __name__ == '__main__':
     if token is None:
         token = ''
 
-    script = nsgcli.nsgcli_main.NsgCLI(base_url=base_url, token=token, netid=netid, region=region, time_format=time_format)
+    script = nsgcli.nsgcli_main.NsgCLI(base_url=base_url, token=token, netid=netid, region=region,
+                                       time_format=time_format)
     script.make_prompt()
 
     if command:

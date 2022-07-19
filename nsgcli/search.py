@@ -6,13 +6,11 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
 
-import api
-import sub_command
-import response_formatter
+from . import api
+from . import response_formatter
+from . import sub_command
 
 
 class SearchCommand(sub_command.SubCommand, object):
@@ -80,4 +78,3 @@ class SearchCommand(sub_command.SubCommand, object):
             return 503, ex
         else:
             return 200, json.loads(response.content)
-

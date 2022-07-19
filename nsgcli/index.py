@@ -6,15 +6,12 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import datetime
 import json
-
 from typing import Dict, Any
 
-import api
-import sub_command
+from . import api
+from . import sub_command
 
 
 class IndexCommands(sub_command.SubCommand, object):
@@ -211,4 +208,3 @@ class IndexCommands(sub_command.SubCommand, object):
             column = index_key[first_colon + 1: last_dot]
             suffix = index_key[last_dot + 1:]
         return table, column, suffix
-

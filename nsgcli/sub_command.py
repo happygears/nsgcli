@@ -6,13 +6,10 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
+import cmd
 import json
 
-import api
-import cmd
-import types
+from . import api
 
 SKIP_NAMES_FOR_COMPLETION = ['EOF', 'q']
 
@@ -105,9 +102,9 @@ class SubCommand(cmd.Cmd, object):
             self.print_success(response)
 
     def is_error(self, response):
-        if isinstance(response, types.ListType):
+        if isinstance(response, list):
             return self.is_error(response[0])
-        if isinstance(response, types.DictionaryType):
+        if isinstance(response, dict):
             return response.get('error', None) is not None or response.get('status', 'ok').lower() != 'ok'
         else:
             return False

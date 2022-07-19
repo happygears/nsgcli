@@ -6,14 +6,11 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-from __future__ import print_function
-
 import json
 from cmd import Cmd
 
 import nsgcli.api
-import response_formatter
-
+from . import response_formatter
 
 TIME_FORMAT_MS = 'ms'
 TIME_FORMAT_ISO_UTC = 'iso_utc'
@@ -75,7 +72,7 @@ class NsgQLCommandLine(Cmd):
                     return None
                 try:
                     deserialized = response.json()
-                except Exception, e:
+                except Exception as e:
                     print('ERROR: {0}, response={1}'.format(e, response.content))
                     return None
                 # print(deserialized)
