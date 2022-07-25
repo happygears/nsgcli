@@ -158,8 +158,8 @@ class AgentCommands(sub_command.SubCommand, object):
             request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
-                                   response_format='json_array')
-        if error is not None:
+                                   response_format='json_array', error_format='json_array')
+        if error is None:
             for acr in response:
                 status = self.parse_status(acr)
                 self.print_agent_response(acr, status)
@@ -178,8 +178,8 @@ class AgentCommands(sub_command.SubCommand, object):
             request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'discover-snmp-access', cmd_args)
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
-                                   response_format='json_array')
-        if error is not None:
+                                   response_format='json_array', error_format='json_array')
+        if error is None:
             for acr in response:
                 status = self.parse_status(acr)
                 self.print_agent_response(acr, status)
@@ -289,8 +289,8 @@ class AgentCommands(sub_command.SubCommand, object):
         # This call returns list of AgentCommandResponse objects in json format
         headers = {'Accept-Encoding': ''}
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
-                                   headers=headers, response_format='json_array')
-        if error is not None:
+                                   headers=headers, response_format='json_array', error_format='json_array')
+        if error is None:
             for acr in response:
                 status = self.parse_status(acr)
                 self.print_agent_response(acr, status)

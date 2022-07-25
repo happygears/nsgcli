@@ -117,10 +117,10 @@ class NsgGrokCommandLine(Cmd):
         if self.pattern:
             data['pattern'] = self.pattern
             response, error = nsgcli.api.call(self.base_url, 'POST', request, data=data,
-                                              token=self.token, timeout=180, response_format='json',
+                                              token=self.token, timeout=180,
                                               headers={'Content-Type': 'application/json',
                                                        'Accept': 'application/json'})
-            if error is not None:
+            if error is None:
                 print(json.dumps(response, indent=4))
 
     def read_stdin(self, parser):
