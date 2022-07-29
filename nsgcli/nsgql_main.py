@@ -59,35 +59,30 @@ class NsgQLCommandLine(Cmd):
         self.execute('DESCRIBE {0}'.format(arg))
 
     def execute(self, arg):
-        with self.post_data(arg.split(';')) as response:
-            status = response.status_code
-            if status != 200:
-                for line in response.iter_lines():
-                    print('ERROR: {0}'.format(json.loads(line)))
-                    return None
-            else:
-                table_formatter = response_formatter.ResponseFormatter(time_format=self.time_format)
-                if self.raw:
-                    print(response.content)
-                    return None
-                try:
-                    deserialized = response.json()
-                except Exception as e:
-                    print('ERROR: {0}, response={1}'.format(e, response.content))
-                    return None
-                # print(deserialized)
-                # print(type(line))
-                # print(line)
-                if self.format == 'table':
-                    for resp in deserialized:
-                        error = self.is_error(resp)
-                        if error:
-                            print('Server error: {0}'.format(error))
-                            continue
-                        table_formatter.print_result_as_table(resp)
-                    return
-                print(json.dumps(deserialized))
-                # print(deserialized)
+        response, error = self.post_data(arg.split(';'))
+        if error is None:
+            table_formatter = response_formatter.ResponseFormatter(time_format=self.time_format)
+            if self.raw:
+                print(response.content)
+                return None
+            try:
+                deserialized = response.json()
+            except Exception as e:
+                print('ERROR: {0}, response={1}'.format(e, response.content))
+                return None
+            # print(deserialized)
+            # print(type(line))
+            # print(line)
+            if self.format == 'table':
+                for resp in deserialized:
+                    error = self.is_error(resp)
+                    if error:
+                        print('Server error: {0}'.format(error))
+                        continue
+                    table_formatter.print_result_as_table(resp)
+                return
+            print(json.dumps(deserialized))
+            # print(deserialized)
 
     def is_error(self, response):
         if isinstance(response, dict) and 'error' in response:
@@ -128,5 +123,6 @@ class NsgQLCommandLine(Cmd):
                     }
                 )
 
-        return nsgcli.api.call(self.base_url, 'POST', path,
-                               data=nsgql, token=self.access_token, stream=True, timeout=self.timeout_sec)
+        return nsgcli.api.call(self.base_url, 'POST', path, data=nsgql,
+                               token=self.access_token, stream=True,
+                               timeout=self.timeout_sec, error_format='json_array')

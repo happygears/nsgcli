@@ -113,28 +113,14 @@ class NsgGrokCommandLine(Cmd):
 
     def call_grok_api(self, parser, txt):
         request = 'v2/grok/net/{0}/parser/{1}'.format(self.netid, parser)
-        try:
-            data = {'text': txt}
-            if self.pattern:
-                data['pattern'] = self.pattern
-
-                response = nsgcli.api.call(self.base_url,
-                                           'POST',
-                                           request,
-                                           data,
-                                           token=self.token,
-                                           timeout=180,
-                                           headers={'Content-Type': 'application/json', 'Accept': 'application/json'})
-        except Exception as ex:
-            return 503, ex
-        else:
-            status = response.status_code
-            if status != 200:
-                print("Failed with error code: {}".format(status))
-                if status < 500:
-                    print(self.get_error(json.loads(response.content)))
-                exit(1)
-            else:
+        data = {'text': txt}
+        if self.pattern:
+            data['pattern'] = self.pattern
+            response, error = nsgcli.api.call(self.base_url, 'POST', request, data=data,
+                                              token=self.token, timeout=180,
+                                              headers={'Content-Type': 'application/json',
+                                                       'Accept': 'application/json'})
+            if error is None:
                 print(json.dumps(json.loads(response.content), indent=4))
 
     def read_stdin(self, parser):

@@ -7,10 +7,12 @@ This module implements the NetSpyGlass API
 """
 
 import copy
-import json
 
 import urllib3
 from requests_unixsocket import Session
+
+from . import error_handlers
+from . import response_handlers
 
 try:
     import http.client as httplib
@@ -18,7 +20,8 @@ except ImportError:
     import http.client
 
 
-def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True):
+def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers=None, stream=True,
+         response_format=None, error_format=None):
     """
     Make NetSpyGlass JSON API call to execute query
 
@@ -33,29 +36,14 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers
     :param timeout:      - timeout, seconds
     :param headers:      - http request headers
     :param stream:       - if True, return result as a stream (default=True)
+    :param response_format:       - format of the response e.g. 'json', 'json_array' (default=None)
+    :param error_format:       - format of the error e.g. 'json_array' (default=None)
     """
     # disable warning
-    # InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate verification is strongly advised.
+    # InsecureRequestWarning: Unverified HTTPS request is being made. Adding certificate
+    #       verification is strongly advised.
     # See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
     urllib3.disable_warnings()
-
-    if 'http+unix://' in base_url:
-        return unix_socket_call_stream(base_url, method, uri_path, data=data, timeout=timeout, headers=headers,
-                                       stream=stream)
-    else:
-        return http_call_stream(base_url, method, uri_path, data=data, token=token, timeout=timeout, headers=headers,
-                                stream=stream)
-
-
-def unix_socket_call_stream(base_url, method, uri_path, data=None, timeout=30, headers=None, stream=True):
-    url = make_socket_url(base_url, uri_path)
-    return make_call(url, method, data, timeout, headers={}, stream=stream)
-
-
-def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=30, headers=None, stream=True):
-    """
-    returns a generator that yields tuples [http_code, line]
-    """
     url = concatenate_url(base_url, uri_path)
     if headers is None:
         send_headers = {}
@@ -63,7 +51,40 @@ def http_call_stream(base_url, method, uri_path, data=None, token=None, timeout=
         send_headers = copy.copy(headers)
     if token is not None:
         send_headers['X-NSG-Auth-API-Token'] = token
-    return make_call(url, method, data, timeout, headers=send_headers, stream=stream)
+    try:
+        response = make_call(url, method, data, timeout, headers=send_headers, stream=stream)
+    except Exception as ex:
+        error = 'Received error when making request to endpoint: {}. Error: {}'.format(url, ex)
+        print(error)
+        return None, error
+    else:
+        error = check_error(response, error_format)
+        if error is None:
+            return decode_response(response, response_format), None
+        else:
+            return None, error
+
+
+def check_error(response, error_format):
+    status_code = response.status_code
+    if status_code < 200 or status_code >= 300:
+        if error_format is not None and error_format == 'json_array':
+            return error_handlers.JsonArrayErrorHandler.handle_error(response)
+        else:
+            return error_handlers.BaseErrorHandler.handle_error(response)
+    return None
+
+
+def decode_response(response, response_format):
+    if response_format is not None:
+        if response_format == 'json':
+            return response_handlers.JsonResponseHandler.get_data(response)
+        elif response_format == 'json_array':
+            return response_handlers.JsonArrayResponseHandler.get_data(response)
+        else:
+            print('Unknown format provided to decode response. Received format: {}'.format(response_format))
+    else:
+        return response_handlers.BaseResponseHandler.get_data(response)
 
 
 def make_call(url, method, data, timeout, headers, stream=False):
@@ -83,38 +104,8 @@ def make_call(url, method, data, timeout, headers, stream=False):
     return response
 
 
-def make_socket_url(base_url, uri_path):
-    url = base_url.replace('/', '%2F').replace(':%2F%2F', '://')
-    return concatenate_url(url, uri_path)
-
-
 def concatenate_url(base_url, uri_path):
     if uri_path[0] == '/':
         return base_url + uri_path
     else:
         return base_url + '/' + uri_path
-
-
-def transform_remote_command_response_stream(response_generator):
-    """
-    the server sends objects as JSON array. Inside of the array, each item
-    occupies one line. Skip array start and end ( [ and ] ) and deserialize each
-    line separately
-
-    :param response_generator:  Response object returned by the requests 'get' or 'post' call
-    :return: generator that yields lines
-    """
-    # print(response_generator.headers)
-
-    for line in response_generator.iter_lines(decode_unicode=True):
-        # print('####' + line)
-
-        if not line or line.strip() in ['[', ']']:
-            continue
-        if line[0] == '[':
-            line = line[1:]
-
-        try:
-            yield json.loads(line)
-        except Exception as e:
-            print('{0} : {1}'.format(e, line))

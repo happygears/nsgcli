@@ -6,8 +6,6 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-import json
-
 from . import api
 from . import sub_command
 from . import system
@@ -94,23 +92,15 @@ class SnmpCommands(sub_command.SubCommand, object):
         else:
             req = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, address, oid, timeout_ms, self.current_region)
         # This call returns list of AgentCommandResponse objects in json format
-        try:
-            headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
-            response = api.call(self.base_url, 'GET', req, token=self.token, stream=True, headers=headers, timeout=7200)
-        except Exception as ex:
-            return 503, ex
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        print('ERROR: {0}'.format(self.get_error(json.loads(line))))
-                        return
-                for acr in api.transform_remote_command_response_stream(response):
-                    # pass
-                    # print(acr)
-                    status = self.parse_status(acr)
-                    self.print_snmp_response(acr, status)
+
+        headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+        response, error = api.call(self.base_url, 'GET', req, token=self.token,
+                                   headers=headers, stream=True, timeout=7200, response_format='json_array',
+                                   error_format='json_array')
+        if error is None:
+            for acr in response:
+                status = self.parse_status(acr)
+                self.print_snmp_response(acr, status)
 
     def print_snmp_response(self, acr, status):
         try:

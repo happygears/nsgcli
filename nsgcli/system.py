@@ -7,13 +7,13 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import collections
-import json
 from functools import cmp_to_key
 from functools import reduce
 
 from . import api
 from . import response_formatter
 from . import sub_command
+from tabulate import tabulate
 
 ROLE_MAP = {
     'manager': 'mgr',
@@ -133,13 +133,8 @@ class SystemCommands(sub_command.SubCommand, object):
         makes API call v2/nsg/cluster/net/{0}/status and returns the response. Note that
         the server does not 'json-stream' response for this API call
         """
-        try:
-            response = api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
-                                token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, json.loads(response.content)
+        return api.call(self.base_url, 'GET', 'v2/nsg/cluster/net/{0}/status'.format(self.netid),
+                                               token=self.token, response_format='json')
 
     def nsgql_call(self, query):
         """
@@ -158,178 +153,37 @@ class SystemCommands(sub_command.SubCommand, object):
                     'format': 'table'
                 }
             )
-        try:
-            response = api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True)
-        except Exception as ex:
-            return 503, ex
-        else:
-            return response.status_code, json.loads(response.content)
+
+        return api.call(self.base_url, 'POST', path, data=nsgql, token=self.token, stream=True, response_format='json')
 
     def help(self):
         print('Show various system parameters and state variables. Arguments: {0}'.format(self.get_args()))
 
     def do_filesystem(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_vars(
                 ['name', 'fsFreeSpace', 'fsTotalSpace', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
                 response)
 
-        # status, response = self.nsgql_call(
-        #     'SELECT device as server,component,NsgRegion,fsUtil,fsFreeSpace,fsTotalSpace FROM fsFreeSpace '
-        #     'WHERE fsUtil NOT NULL AND fsFreeSpace NOT NULL AND fsTotalSpace NOT NULL ORDER BY device')
-        # if status != 200 or self.is_error(response):
-        #     print('ERROR: {0}'.format(self.get_error(response)))
-        # else:
-        #     response = response[0]
-        #     self.table_formatter.print_result_as_table(response)
-
-    def do_memory(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,component,NsgRegion,systemMemFreePercent,systemMemTotal FROM systemMemTotal '
-            'WHERE systemMemFreePercent NOT NULL AND systemMemTotal NOT NULL ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-    def do_cpu(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            self.print_cluster_vars(
-                ['name', 'cpuUsage', 'role', 'cycleNumber', 'processUptime', 'updatedAt'],
-                response)
-        # status, response = self.nsgql_call(
-        #     'SELECT device as server,component,NsgRegion,cpuUsage FROM cpuUsage WHERE cpuUsage NOT NULL ORDER BY device')
-        # if status != 200 or self.is_error(response):
-        #     print('ERROR: {0}'.format(self.get_error(response)))
-        # else:
-        #     response = response[0]
-        #     self.table_formatter.print_result_as_table(response)
-
-    def do_tsdb(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,component,NsgRegion,'
-            'tsDbVarCount,tsDbErrors,tsDbSaveTime,tsDbSaveLag,tsDbTimeSinceLastSave '
-            'FROM tsDbVarCount '
-            'WHERE tsDbVarCount NOT NULL AND tsDbErrors NOT NULL AND '
-            'tsDbSaveTime NOT NULL AND tsDbSaveLag NOT NULL AND tsDbTimeSinceLastSave  NOT NULL ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-    def do_python(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,NsgRegion,pythonErrorsRate FROM pythonErrorsRate ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-    def do_c3p0(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,c3p0NumConnections, c3p0NumBusyConnections, c3p0NumIdleConnections,'
-            'c3p0NumFailedCheckouts, c3p0NumFailedIdleTests FROM c3p0NumConnections ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-    def do_jvm(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as server,NsgRegion,jvmMemFree,jvmMemMax,jvmMemTotal,jvmMemUsed,GCCountRate,GCTimeRate '
-            'FROM jvmMemTotal ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
     def do_agent_command_executor(self, arg):
-        status, response = self.nsgql_call(
+        response, error = self.nsgql_call(
             'SELECT device as server,component,NsgRegion,poolSize,poolQueueSize,activeCount,completedCount '
             'FROM poolSize ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        if error is None:
             response = response[0]
             self.table_formatter.print_result_as_table(response)
-
-    def do_redis(self, arg):
-        status, response = self.nsgql_call(
-            'SELECT device as node,RedisRole,redisCommandsRate,redisDbSize,redisUsedMemory,redisMaxMemory,'
-            'redisUsedCpuSysRate,redisUsedCpuUserRate,redisConnectedClients,redisCommandsRate '
-            'FROM redisDbSize '
-            'ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-        status, response = self.nsgql_call(
-            'SELECT device as server,redisErrorsRate,redisOOMErrorsRate FROM redisErrorsRate ORDER BY device')
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            response = response[0]
-            self.table_formatter.print_result_as_table(response)
-
-    def do_lag(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            self.print_cluster_vars(
-                ['name', 'id', 'role', 'region',
-                 'lagAgentAllReceived', 'lagAgentAllSent', 'lagServerAllReceived', 'lagTotal',
-                 'processUptime', 'updatedAt'],
-                response)
-
-    def do_sum(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            self.print_cluster_vars(
-                ['name', 'deviceRepoSize', 'monitoredDevices', 'dataPoolSize', 'numVars',
-                 'metadataSize', 'metadataMissCount',
-                 'lagTotal', 'cycleNumber', 'processUptime', 'updatedAt'],
-                response)
-
-    def do_devices(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
-            self.print_cluster_vars(
-                ['name', 'deviceRepoSize', 'physicalDevices', 'cachedDevices', 'monitoredDevices',
-                 'processUptime', 'updatedAt'],
-                response)
 
     def do_version(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_vars(
                 ['name', 'nsgVersion', 'revision', 'processUptime', 'updatedAt'],
                 response)
 
     def do_status(self, arg):
-        status, response = self.status_api_call()
-        if status != 200 or self.is_error(response):
-            print('ERROR: {0}'.format(self.get_error(response)))
-        else:
+        response, error = self.status_api_call()
+        if error is None:
             self.print_cluster_status(response)
 
     def print_cluster_status(self, status_json):
@@ -346,10 +200,8 @@ class SystemCommands(sub_command.SubCommand, object):
             ['name', 'hostName', 'id', 'role', 'region', 'url', 'processUptime', 'updatedAt'], status_json)
 
     def print_cluster_vars(self, names, status_json):
-        field_width = collections.OrderedDict()
         field_names = {}
         for n in names:
-            field_width[n] = 0
             field_names[n] = n
 
         this_server = status_json['name']
@@ -362,31 +214,9 @@ class SystemCommands(sub_command.SubCommand, object):
                 value = str(member.get(field, ''))
                 member[field] = self.table_formatter.transform_value(field, value)
 
+        row_list = []
         for member in sorted_members:
-            for field in field_width.keys():
-                value = str(member.get(field, ''))
-                if field_width.get(field, 0) < len(value):
-                    field_width[field] = len(value)
-                if field_width.get(field, 0) < len(field):
-                    field_width[field] = len(field)
+            column_values = [member[n] for n in names]
+            row_list.append(column_values)
 
-        format_lst = ['{m[%s]:<%d}' % (field, field_width[field]) for field in field_width.keys()]
-        format_str = '    '.join(format_lst)
-        total_width = reduce(lambda x, y: x + y, field_width.values())
-        total_width += len(field_width) * 4
-        # print(format_str)
-        print(format_str.format(m=field_names))
-        print('-' * total_width)
-        for member in sorted_members:
-            print(format_str.format(m=member))
-        print('-' * total_width)
-
-    # def is_error(self, response):
-    #     return isinstance(response, types.DictionaryType) and response.get('status', '').lower() == 'error'
-
-    # def get_error(self, response):
-    #     if isinstance(response, types.ListType):
-    #         return self.get_error(response[0])
-    #     if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
-    #         return response
-    #     return response.get('error', '')
+        print(tabulate(row_list, names, tablefmt='fancy_outline'))

@@ -6,7 +6,7 @@ This module implements subset of NetSpyGlass CLI commands
 
 """
 
-import json
+from tabulate import tabulate
 
 from . import api
 from . import response_formatter
@@ -102,15 +102,15 @@ discovery resume                      resume discovery
             print()
 
     def print_queue_contents(self, input_list, headers, columns, sort_column=None):
-        discovery_queue_format = '    {0:10}  {1:32}  {2:16}  {3}'
-        print(discovery_queue_format.format(*headers))
+        row_list = []
         if sort_column is not None:
             sorted_list = sorted(input_list, key=lambda t: t[sort_column])
         else:
             sorted_list = input_list
         for task in sorted_list:
             column_values = [task[c] for c in columns]
-            print(discovery_queue_format.format(*column_values))
+            row_list.append(column_values)
+        print(tabulate(row_list, headers, tablefmt='fancy_outline'))
 
     def do_submit(self, arg):
         comps = arg.split(' ')
@@ -161,34 +161,16 @@ discovery resume                      resume discovery
 
     def get_command(self, request, data=None):
         """
-        execute simple command via API call and return deserialized response
+        executes simple command via API call and returns deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'GET', request, data=data, token=self.token)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-            return None
-        else:
-            return self.deserialize_response(response)
+        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json')
+        return response
 
     def post_command(self, request, data=None):
         """
-        execute simple command via API call and return deserialized response
+        executes simple command via API call and returns deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'POST', request, data=data, token=self.token)
-        except Exception as ex:
-            print('ERROR: {0}'.format(ex))
-            return None
-        else:
-            return self.deserialize_response(response)
-
-    def deserialize_response(self, response):
-        with response:
-            status = response.status_code
-            if status != 200:
-                for line in response.iter_lines():
-                    err = self.get_error(json.loads(line))
-                    print('ERROR: {0}'.format(err))
-                    return None
-            return json.loads(response.content)
+        response, error = api.call(self.base_url, 'POST', request, data=data, token=self.token, response_format='json')
+        if error is None:
+            return response
+        return None

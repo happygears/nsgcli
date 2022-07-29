@@ -12,7 +12,7 @@ class ExecTestCase(unittest.TestCase):
     def test_exec_ping(self):
         cmdline = "exec ping 10.0.15.150"
         with mock.patch.object(Session, 'get') as mock_get:
-            mock_resp = testutils.mock_response(200, exec_ping_resp)
+            mock_resp = testutils.mock_response(200, exec_ping_resp, None)
             mock_get.return_value = mock_resp
             mock_get.return_value.__enter__ = mock_resp
             mock_get.return_value.__exit__ = mock.Mock(return_value=False)
@@ -28,7 +28,7 @@ class ExecTestCase(unittest.TestCase):
     def test_exec_fping(self):
         cmdline = "exec fping 10.0.15.150"
         with mock.patch.object(Session, 'get') as mock_get:
-            mock_resp = testutils.mock_response(200, exec_ping_resp)
+            mock_resp = testutils.mock_response(200, exec_ping_resp, None)
             mock_get.return_value = mock_resp
             mock_get.return_value.__enter__ = mock_resp
             mock_get.return_value.__exit__ = mock.Mock(return_value=False)
@@ -46,7 +46,7 @@ class ExecTestCase(unittest.TestCase):
     def test_exec_traceroute(self):
         cmdline = "exec traceroute 10.0.15.150"
         with mock.patch.object(Session, 'get') as mock_get:
-            mock_resp = testutils.mock_response(200, exec_ping_resp)
+            mock_resp = testutils.mock_response(200, exec_ping_resp, None)
             mock_get.return_value = mock_resp
             mock_get.return_value.__enter__ = mock_resp
             mock_get.return_value.__exit__ = mock.Mock(return_value=False)

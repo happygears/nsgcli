@@ -11,6 +11,7 @@ import numbers
 import dateutil.parser
 import dateutil.tz
 import pytz
+from tabulate import tabulate
 
 TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
                 'timeOfLastNotification', 'createdAt']
@@ -49,8 +50,6 @@ def percentage_fmt(num):
 class ResponseFormatter(object):
     def __init__(self, column_title_mapping=None, time_format=TIME_FORMAT_MS):
         super(ResponseFormatter, self).__init__()
-        self.header_divider = '-+-'
-        self.cell_divider = ' | '
         self.column_title_mapping = column_title_mapping
         self.time_format = time_format
 
@@ -62,52 +61,19 @@ class ResponseFormatter(object):
             columns.append(col['text'])
 
         rows = resp.get('rows', [])
-        widths = {}
-        col_num = 0
-        for col in columns:
-            widths[col_num] = len(self.transform_column_title(col))
-            col_num += 1
-        for row in rows:
-            el_count = 0
-            for element in row:
-                element = self.transform_value(columns[el_count], element)
-                element = str(element).rstrip()
-                w = widths.get(el_count, 0)
-                if len(element) > w:
-                    widths[el_count] = len(element)
-                el_count += 1
-        total_width = 0
-        formatted_column_titles = []
-        self.print_table_header_separator(widths)
-        for idx in range(0, len(widths)):
-            form = '{0:' + str(widths[idx]) + '}'
-            col_txt = form.format(self.transform_column_title(columns[idx]))
-            formatted_column_titles.append(col_txt)
-            total_width += len(col_txt)
-        print(self.cell_divider.join(formatted_column_titles))
-        self.print_table_header_separator(widths)
+        for idx in range(0, len(columns)):
+            columns[idx] = self.transform_column_title(columns[idx])
         if rows:
             for row in rows:
-                row_elements = []
-                for idx in range(0, len(widths)):
-                    form = '{0:' + str(widths[idx]) + '}'
-                    element = self.transform_value(columns[idx], row[idx])
-                    row_txt = form.format(element)
-                    row_elements.append(row_txt)
-                print(self.cell_divider.join(row_elements))
-            self.print_table_header_separator(widths)
+                for idx in range(0, len(columns)):
+                    row[idx] = self.transform_value(columns[idx], row[idx])
+        print(tabulate(rows, columns, tablefmt='fancy_outline'))
         processing_time_sec = resp.get('processingTimeMs', 0) / 1000.0
         server = resp.get('server', '')
         if server:
             print('Count: {0}, served by: {1}, processing time: {2} sec; query id: {3}'.format(
                 len(rows), server, processing_time_sec, resp.get('queryId', 0)))
             print('')
-
-    def print_table_header_separator(self, widths):
-        header_parts = []
-        for idx in range(0, len(widths)):
-            header_parts.append('-' * widths[idx])
-        print(self.header_divider.join(header_parts))
 
     def transform_column_title(self, column):
         if column in TIME_COLUMNS or column in TIME_ISO8601_COLUMNS:
@@ -158,9 +124,6 @@ class ResponseFormatter(object):
                 return time_as_dt.isoformat(' ')
             else:
                 return value
-
-        # if field_name == 'cpuUsage':
-        #     return value + ' %'
 
         if field_name in MEMORY_VALUE_FIELDS and value:  # and isinstance(value, numbers.Number):
             return sizeof_fmt(float(value))

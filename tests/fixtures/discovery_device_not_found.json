@@ -1,0 +1,4 @@
+{
+    "error": "io.grpc.StatusRuntimeException: NOT_FOUND: find(): device not found, name=dev1 sysName=dev1 address=dev1",
+    "status": "error"
+}

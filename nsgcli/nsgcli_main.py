@@ -13,7 +13,6 @@ from . import api
 from . import device_commands
 from . import discovery_commands
 from . import exec_commands
-from . import index
 from . import search
 from . import show
 from . import snmp_commands
@@ -76,11 +75,8 @@ class NsgCLI(sub_command.SubCommand, object):
         "ping" NetSpyGlass server this cli client connects to. This returns "ok" if the server is up and running
         """
         request = 'v2/ping/net/{0}/se'.format(self.netid)
-        try:
-            response = api.call(self.base_url, 'GET', request, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
+        response, error = api.call(self.base_url, 'GET', request, token=self.token)
+        if error is None:
             print(response.content.decode(response.encoding))
 
     ##########################################################################################
@@ -117,52 +113,6 @@ class NsgCLI(sub_command.SubCommand, object):
     def complete_search(self, text, _line, _begidx, _endidx):
         sub_cmd = search.SearchCommand(self.base_url, self.token, self.netid, region=self.current_region)
         return sub_cmd.completedefault(text, _line, _begidx, _endidx)
-
-    ##########################################################################################
-    def do_index(self, arg):
-        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
-        if arg:
-            sub_cmd.onecmd(arg)
-        else:
-            sub_cmd.cmdloop()
-
-    def help_index(self):
-        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
-        return sub_cmd.help()
-
-    def complete_index(self, text, _line, _begidx, _endidx):
-        sub_cmd = index.IndexCommands(self.base_url, self.token, self.netid, region=self.current_region)
-        return sub_cmd.completedefault(text, _line, _begidx, _endidx)
-
-    ##########################################################################################
-    def do_cache(self, arg):
-        if arg not in CACHE_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        response = self.basic_command('v2/ui/net/{0}/actions/cache/{1}'.format(self.netid, arg))
-        if response is not None:
-            self.print_response(response)
-
-    def help_cache(self):
-        print('Operations with cache. Supported arguments: {0}'.format(CACHE_ARGS))
-
-    def complete_cache(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, CACHE_ARGS)
-
-    ##########################################################################################
-    def do_nsgql(self, arg):
-        if arg not in NSGQL_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        response = self.basic_command('v2/ui/net/{0}/actions/nsgqlschema/{1}'.format(self.netid, arg))
-        if response is not None:
-            self.print_response(response)
-
-    def help_nsgql(self):
-        print('Operations with NsgQL schema. Supported arguments: {0}'.format(NSGQL_ARGS))
-
-    def complete_nsgql(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, NSGQL_ARGS)
 
     ##########################################################################################
     def do_reload(self, arg):
@@ -243,43 +193,6 @@ class NsgCLI(sub_command.SubCommand, object):
 
     def complete_device(self, text, _line, _begidx, _endidx):
         return self.complete_cmd(text, DEVICE_ARGS)
-
-    ##########################################################################################
-    def do_hud(self, arg):
-        if arg not in HUD_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        request = 'v2/nsg/test/net/{0}/hud/{1}'.format(self.netid, arg)
-        response = self.basic_command(request)
-        if response is not None:
-            self.print_response(response)
-
-    def help_hud(self):
-        print('Operations with HUD in the UI. Supported arguments: {0}'.format(HUD_ARGS))
-
-    def complete_hud(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, HUD_ARGS)
-
-    ##########################################################################################
-    def do_restart(self, arg):
-        """
-        restart various components:
-
-        restart tsdb         - restarts tsdb connector
-        restart monitor      - restarts monitor (the component that communicates with NetSpyGlass agents)
-
-        TODO: add 'restart server <server_name>'
-        """
-        if arg not in RESTART_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        request = 'v2/ui/net/{0}/actions/{1}/reconnect'.format(self.netid, arg)
-        response = self.basic_command(request)
-        if response is not None:
-            self.print_response(response)
-
-    def complete_restart(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, RESTART_ARGS)
 
     ##########################################################################################
     def do_debug(self, arg):
@@ -381,22 +294,6 @@ class NsgCLI(sub_command.SubCommand, object):
             print('Error: {0}'.format(e))
 
     ##########################################################################################
-    def do_server(self, arg):
-        """
-        Server actions. There is only one action "pause", it forces HA leader to become standby
-        """
-        if arg not in SERVER_ARGS:
-            print('Invalid argument "{0}"'.format(arg))
-            return
-        request = 'v2/nsg/test/net/{0}/server'.format(self.netid)
-        response = self.basic_command(request, data='action={0}'.format(arg))
-        if response is not None:
-            self.print_response(response)
-
-    def complete_server(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, SERVER_ARGS)
-
-    ##########################################################################################
     def do_agent(self, arg):
         """
         agent [agent_name|all] command args
@@ -476,16 +373,6 @@ class NsgCLI(sub_command.SubCommand, object):
         """
         execute simple command via API call and return deserialized response
         """
-        try:
-            response = api.call(self.base_url, 'GET', request, data=data, token=self.token)
-        except Exception as ex:
-            return 503, ex
-        else:
-            with response:
-                status = response.status_code
-                if status != 200:
-                    for line in response.iter_lines():
-                        err = self.get_error(json.loads(line))
-                        print('ERROR: {0}'.format(err))
-                        return None
-                return json.loads(response.content)
+        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json',
+                                   error_format='json_array')
+        return response
