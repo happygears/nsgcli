@@ -13,6 +13,7 @@ from functools import reduce
 from . import api
 from . import response_formatter
 from . import sub_command
+from tabulate import tabulate
 
 ROLE_MAP = {
     'manager': 'mgr',
@@ -199,10 +200,8 @@ class SystemCommands(sub_command.SubCommand, object):
             ['name', 'hostName', 'id', 'role', 'region', 'url', 'processUptime', 'updatedAt'], status_json)
 
     def print_cluster_vars(self, names, status_json):
-        field_width = collections.OrderedDict()
         field_names = {}
         for n in names:
-            field_width[n] = 0
             field_names[n] = n
 
         this_server = status_json['name']
@@ -215,31 +214,9 @@ class SystemCommands(sub_command.SubCommand, object):
                 value = str(member.get(field, ''))
                 member[field] = self.table_formatter.transform_value(field, value)
 
+        row_list = []
         for member in sorted_members:
-            for field in field_width.keys():
-                value = str(member.get(field, ''))
-                if field_width.get(field, 0) < len(value):
-                    field_width[field] = len(value)
-                if field_width.get(field, 0) < len(field):
-                    field_width[field] = len(field)
+            column_values = [member[n] for n in names]
+            row_list.append(column_values)
 
-        format_lst = ['{m[%s]:<%d}' % (field, field_width[field]) for field in field_width.keys()]
-        format_str = '    '.join(format_lst)
-        total_width = reduce(lambda x, y: x + y, field_width.values())
-        total_width += len(field_width) * 4
-        # print(format_str)
-        print(format_str.format(m=field_names))
-        print('-' * total_width)
-        for member in sorted_members:
-            print(format_str.format(m=member))
-        print('-' * total_width)
-
-    # def is_error(self, response):
-    #     return isinstance(response, types.DictionaryType) and response.get('status', '').lower() == 'error'
-
-    # def get_error(self, response):
-    #     if isinstance(response, types.ListType):
-    #         return self.get_error(response[0])
-    #     if isinstance(response, types.UnicodeType) or isinstance(response, types.StringType):
-    #         return response
-    #     return response.get('error', '')
+        print(tabulate(row_list, names, tablefmt='fancy_outline'))

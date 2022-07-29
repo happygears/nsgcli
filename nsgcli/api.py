@@ -58,7 +58,11 @@ def call(base_url, method, uri_path, data=None, token=None, timeout=180, headers
         print(error)
         return None, error
     else:
-        return decode_response(response, response_format), check_error(response, error_format)
+        error = check_error(response, error_format)
+        if error is None:
+            return decode_response(response, response_format), None
+        else:
+            return None, error
 
 
 def check_error(response, error_format):

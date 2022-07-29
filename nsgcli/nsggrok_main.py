@@ -121,7 +121,7 @@ class NsgGrokCommandLine(Cmd):
                                               headers={'Content-Type': 'application/json',
                                                        'Accept': 'application/json'})
             if error is None:
-                print(json.dumps(response, indent=4))
+                print(json.dumps(json.loads(response.content), indent=4))
 
     def read_stdin(self, parser):
         in_buffer = ""

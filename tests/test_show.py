@@ -6,6 +6,7 @@ status_resp = testutils.read_file('status_resp.json')
 status_first_element_expected = testutils.read_file('status_first_element_expected.json')
 cluster_status_resp = testutils.read_file('cluster_status_resp.json')
 device_query_response = testutils.read_file('device_query_response.json')
+status_error_response = testutils.read_file('status_resp_error.json')
 
 
 class ShowTestCase(unittest.TestCase):
@@ -38,3 +39,8 @@ class ShowTestCase(unittest.TestCase):
         actual = testutils.run_cmd_with_mock(cmdline, 'get', 200, cluster_status_resp)
         self.assertIn('labdcdev-monitor-1', actual)
         self.assertIn('1.1.0-13', actual)
+
+    def test_show_system_status_error(self):
+        cmdline = 'show system status'
+        actual = testutils.run_cmd_with_mock(cmdline, 'get', 404, status_error_response)
+        self.assertEqual('An error occurred. Error: Not Found, API status code: 404', actual)

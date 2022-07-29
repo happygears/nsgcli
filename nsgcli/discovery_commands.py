@@ -110,7 +110,7 @@ discovery resume                      resume discovery
         for task in sorted_list:
             column_values = [task[c] for c in columns]
             row_list.append(column_values)
-        print(tabulate(row_list, headers))
+        print(tabulate(row_list, headers, tablefmt='fancy_outline'))
 
     def do_submit(self, arg):
         comps = arg.split(' ')
@@ -163,14 +163,14 @@ discovery resume                      resume discovery
         """
         executes simple command via API call and returns deserialized response
         """
-        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json',
-                                   error_format='json_array')
+        response, error = api.call(self.base_url, 'GET', request, data=data, token=self.token, response_format='json')
         return response
 
     def post_command(self, request, data=None):
         """
         executes simple command via API call and returns deserialized response
         """
-        response, error = api.call(self.base_url, 'POST', request, data=data, token=self.token, response_format='json',
-                                   error_format='json_array')
-        return response
+        response, error = api.call(self.base_url, 'POST', request, data=data, token=self.token, response_format='json')
+        if error is None:
+            return response
+        return None

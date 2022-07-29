@@ -58,8 +58,9 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         Print software version
         """
         response, error = self.get_status()
-        response = response[0]
-        print(response['version'])
+        if error is None:
+            response = response[0]
+            print(response['version'])
 
     ##########################################################################################
     def do_uuid(self, args):
@@ -67,8 +68,9 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         Print NSG cluster uuid
         """
         response, error = self.get_status()
-        response = response[0]
-        print(response['uuid'])
+        if error is None:
+            response = response[0]
+            print(response['uuid'])
 
     ##########################################################################################
     def do_discovery(self, arg):
@@ -84,7 +86,7 @@ class ShowCommands(nsgcli.sub_command.SubCommand, object):
         Request server status
         """
         response, error = self.get_status()
-        if response is not None:
+        if error is None:
             response = response[0]
             print(json.dumps(response, indent=4))
 

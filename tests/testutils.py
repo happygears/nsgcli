@@ -1,12 +1,13 @@
+import contextlib
 import io
+import os
+from pathlib import Path
+from unittest import mock
+
+from requests import Session
 
 from nsgcli.nsgcli_main import NsgCLI
 from nsgcli.nsgql_main import NsgQLCommandLine
-import contextlib
-from unittest import mock
-from pathlib import Path
-import os
-from requests import Session
 
 nsg_cli = None
 nsgql = None
@@ -54,17 +55,21 @@ def read_file(file_name, as_text=True):
         return file_path.read_bytes()
 
 
-def mock_response(status_code, content):
+def mock_response(status_code, content, content_type):
     mock_resp = mock.Mock()
     mock_resp.status_code = status_code
     mock_resp.content = content
     mock_resp.encoding = 'utf-8'
+    if content_type is None:
+        mock_resp.headers = {'Content-Type': 'application/json'}
+    else:
+        mock_resp.headers = {'Content-Type': content_type}
     return mock_resp
 
 
-def run_cmd_with_mock(cmdline, method, status, content):
+def run_cmd_with_mock(cmdline, method, status, content, content_type=None):
     with mock.patch.object(Session, method) as mock_get:
-        mock_resp = mock_response(status, content)
+        mock_resp = mock_response(status, content, content_type)
         mock_get.return_value = mock_resp
         mock_get.return_value.__enter__ = mock_resp
         mock_get.return_value.__exit__ = mock.Mock(return_value=False)
