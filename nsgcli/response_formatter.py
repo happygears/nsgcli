@@ -13,7 +13,7 @@ import dateutil.tz
 import pytz
 from tabulate import tabulate
 
-TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'localTimeMs', 'activeSince',
+TIME_COLUMNS = ['time', 'createdAt', 'updatedAt', 'accessedAt', 'expiresAt', 'startsAt', 'localTimeMs', 'activeSince',
                 'timeOfLastNotification', 'createdAt']
 TIME_ISO8601_COLUMNS = ['discoveryStartTime', 'discoveryFinishTime', 'processingFinishTime']
 
@@ -61,12 +61,12 @@ class ResponseFormatter(object):
             columns.append(col['text'])
 
         rows = resp.get('rows', [])
-        for idx in range(0, len(columns)):
-            columns[idx] = self.transform_column_title(columns[idx])
         if rows:
             for row in rows:
                 for idx in range(0, len(columns)):
                     row[idx] = self.transform_value(columns[idx], row[idx])
+        for idx in range(0, len(columns)):
+            columns[idx] = self.transform_column_title(columns[idx])
         print(tabulate(rows, columns, tablefmt='fancy_outline'))
         processing_time_sec = resp.get('processingTimeMs', 0) / 1000.0
         server = resp.get('server', '')
