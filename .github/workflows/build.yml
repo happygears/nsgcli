@@ -31,7 +31,13 @@ jobs:
 
       - name: Define NSG Version
         id: nsg_version
-        uses: ./.github/actions/nsg_version
+        uses: happygears/gt2v@v2
+
+      - name: Print NSG Version
+        run: |
+          echo "Build version :point_down:" >> $GITHUB_STEP_SUMMARY
+          echo "${{ steps.nsg_version.outputs.long_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
 
       - name: Set version
         shell: bash

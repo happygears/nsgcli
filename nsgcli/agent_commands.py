@@ -268,6 +268,17 @@ class AgentCommands(sub_command.SubCommand, object):
         cmd_args = self.make_args(args)
         self.common_command('bulk_request', cmd_args)
 
+    def do_gnmi(self, args):
+        """
+        Execute gnmi get command using agents in the currently selected region
+
+        gnmi <address> get <path>
+        gnmi <address> subscribe <path>
+        gnmi <address> capabilities
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('gnmi', cmd_args)
+
     def snmp_command(self, command, arg):
         """
         snmp_get <agent> <address> oid [timeout_ms]
