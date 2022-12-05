@@ -17,6 +17,7 @@ Status: {m[status]}
 Output: 
 {m[output]}"""
 
+GNMI_EXEC_TEMPLATE = '/v2/nsg/cluster/net/{0}/exec/{1}?method={2}&address={3}&region={4}&agent={5}'
 EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
 EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
 

@@ -1,0 +1,169 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import sys
+import re
+import gnmi.proto
+from google.protobuf.json_format import MessageToJson
+
+import nsgcli.nsggnmi_main
+import nsgcli.response_formatter
+
+
+def gnmi_path_generator(path_in_question: str,
+                        target: str = None):
+    """Parses an XPath expression into a gNMI Path
+    Accepted syntaxes:
+    - "" or "/" for the empty path;
+    - "origin://" or "/origin://" for the empty path with origin set to `origin` (e.g., `rfc7951`)
+    - "yang-module:container/container[key=value]/other-module:leaf";
+      the origin set to yang-module, and specify a key-value selector
+    - "/yang-module:container/container[key=value]/other-module:leaf";
+       identical to the previous
+    - "/container/container[key=value]"; the origin left empty
+    """
+    gnmi_path = gnmi.proto.Path()
+    keys = []
+    temp_path = ''
+    temp_non_modified = ''
+
+    if target:
+        gnmi_path.target = target
+
+    # Subtracting all the keys from the elements and storing them separately
+    if path_in_question:
+        if re.match(r'.*?\[.+?=.*?\].*?', path_in_question):
+            split_list = re.findall(r'.*?\[.+?=.*?\].*?', path_in_question)
+
+            for sle in split_list:
+                temp_non_modified += sle
+                temp_key, temp_value = re.sub(r'.*?\[(.+?)\].*?', r'\g<1>', sle).split('=')
+                keys.append({temp_key: temp_value})
+                sle = re.sub(r'(.*?\[).+?(\].*?)', fr'\g<1>{len(keys) - 1}\g<2>', sle)
+                temp_path += sle
+
+            if len(temp_non_modified) < len(path_in_question):
+                temp_path += path_in_question.replace(temp_non_modified, '')
+
+            path_in_question = temp_path
+
+        path_elements = path_in_question.split('/')
+        path_elements = list(filter(None, path_elements))
+
+        # Check if first path element contains a colon, and use that to set origin
+        if path_elements and re.match('.+?:.*?', path_elements[0]):
+            pe_entry = path_elements[0]
+            parts = pe_entry.split(':', 1)
+            gnmi_path.origin = parts[0]
+
+            if len(parts) > 1 and parts[1]:
+                path_elements[0] = parts[1]
+            else:
+                del path_elements[0]
+
+        for pe_entry in path_elements:
+            if re.match(r'.+?\[\d+?\]', pe_entry):
+                element_keys = {}
+                path_info = [re.sub(']', '', en) for en in pe_entry.split('[')]
+                element = path_info.pop(0)
+
+                for elem_key in path_info:
+                    element_keys.update(keys[int(elem_key)])
+
+                gnmi_path.elem.append(gnmi.proto.PathElem(name=element, key=element_keys))
+
+            else:
+                gnmi_path.elem.append(gnmi.proto.PathElem(name=pe_entry))
+
+    return gnmi_path
+
+
+class InvalidArgsException(Exception):
+    pass
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Send gnmi request to the device.')
+    parser.add_argument('-b', '--base-url', dest='url', default=os.getenv('NSG_SERVICE_URL'),
+                        help="Server access URL without the path, for example 'http://nsg.domain.com:9100'")
+
+    parser.add_argument('-t', '--token', dest='token', default=os.getenv('NSG_API_TOKEN'),
+                        help='Server API access token (if the server is configured with user authentication)')
+
+    parser.add_argument('-n', '--network', dest='network', default=1,
+                        help='NetSpyGlass network id (a number, default: 1)')
+
+    parser.add_argument('-r', '--region', dest='region', default='world',
+                        help='if present, all commands will be executed on given region. Equivalent to the command \'region\' in the interactive mode')
+
+    subparsers = parser.add_subparsers(required=True, dest='command', help='sub-command help')
+
+    # create the parser for the "capabilities" command
+    parser_cap = subparsers.add_parser('capabilities', help='capabilities help')
+    parser_cap.add_argument('-a', '--address', required=True, dest='address', help='address help')
+
+    # create the parser for the "get" command
+    parser_get = subparsers.add_parser('get', help='get help')
+    parser_get.add_argument('-a', '--address', required=True, dest='address', help='address help')
+    parser_get.add_argument('-p', '--path', nargs='+', required=True, dest='path', help='path help')
+
+    # create the parser for the "subscribe" command
+    parser_sub = subparsers.add_parser('subscribe', help='subscribe help')
+    parser_sub.add_argument('-a', '--address', required=True, dest='address', help='address help')
+    parser_sub.add_argument('-p', '--path', nargs='+', required=True, dest='path', help='path help')
+
+    args = parser.parse_args()
+    print(args.command)
+    print(args.address)
+    # print(args.path)
+    print(args.network)
+    print(args.url)
+    print(args.token)
+    print(args.region)
+
+    request = None
+    if args.command == 'get':
+        request = gnmi.proto.GetRequest(
+            path=[gnmi_path_generator(args.path[0])],
+            type=gnmi.proto.GetRequestDataType.ALL,
+            encoding=gnmi.proto.Encoding.JSON_IETF
+        )
+    elif args.command == 'subscribe':
+        path = gnmi_path_generator(args.path[0])
+        path._serialized_on_wire = True
+        subscription = gnmi.proto.Subscription(
+            path=path,
+            mode=gnmi.proto.SubscriptionMode.SAMPLE,
+            sample_interval=2000000000
+        )
+
+        subscription_list = gnmi.proto.SubscriptionList(
+            subscription=[subscription],
+            encoding=gnmi.proto.Encoding.JSON_IETF,
+            mode=gnmi.proto.SubscriptionListMode.STREAM
+        )
+
+        request = gnmi.proto.SubscribeRequest(
+            subscribe=subscription_list
+        )
+    elif args.command == 'capabilities':
+        request = gnmi.proto.CapabilityRequest()
+    else:
+        print("Wrong command")
+        exit(1)
+
+    print(request.to_json())
+
+    script = nsgcli.nsggnmi_main.NsgGnmiCommandLine(base_url=args.url,
+                                                    token=args.token,
+                                                    netid=args.network,
+                                                    region=args.region)
+    try:
+        if args.command == 'subscribe':
+            script.stream(args.command, args.address, request.to_dict())
+        else:
+            script.send(args.command, args.address, request.to_dict())
+    except KeyboardInterrupt as e:
+        print(e)
+        sys.exit(0)
