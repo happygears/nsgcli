@@ -103,15 +103,15 @@ if __name__ == '__main__':
 
     # create the parser for the "capabilities" command
     parser_cap = subparsers.add_parser('capabilities',
-                                       help='Send gNMI CapabilityRequest to the device and print the CapabilityResponse'
-                                            ' to the standard output. '
+                                       help='Send gNMI CapabilityRequest to the device and print received '
+                                            'CapabilityResponse to the standard output. '
                                             'See gNMI spec, 3.2 Capability Discovery')
     parser_cap.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
 
     # create the parser for the "get" command
     parser_get = subparsers.add_parser('get',
-                                       help='Send gNMI GetRequest to the device and print the GetResponse '
-                                            'to the standard output. '
+                                       help='Send gNMI GetRequest to the device and print received '
+                                            'GetResponse to the standard output. '
                                             'See gNMI spec, 3.3 Retrieving Snapshots of State Information')
     parser_get.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
     parser_get.add_argument('-p', '--path', nargs='+', required=True, dest='path',
@@ -127,8 +127,8 @@ if __name__ == '__main__':
 
     # create the parser for the "subscribe" command
     parser_sub = subparsers.add_parser('subscribe',
-                                       help='Send gNMI SubscribeRequest to the device and print the SubscribeResponse '
-                                            'to the standard output. '
+                                       help='Send gNMI SubscribeRequest to the device and print received '
+                                            'SubscribeResponse to the standard output. '
                                             'See gNMI spec, 3.5 Subscribing to Telemetry Updates')
     parser_sub.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
     parser_sub.add_argument('-p', '--path', nargs='+', required=True, dest='path',
@@ -169,12 +169,12 @@ if __name__ == '__main__':
     parser_sub.add_argument('--qos', required=False, dest='qos', type=int, default=None,
                             help='specifies the DSCP value to be set on transmitted telemetry updates from the target. '
                                  'Reference: gNMI Specification Section 3.5.1.2')
-    parser_sub.add_argument('--streaming_mode', required=False, dest='mode', default='STREAM',
+    parser_sub.add_argument('--streaming_mode', required=False, dest='streaming_mode', default='STREAM',
                             choices=['STREAM', 'ONCE', 'POLL'],
                             help='Default is STREAM')
 
     args = parser.parse_args()
-    print(args)
+    # print("CLI arguments: " + args)
 
     request = None
     if args.command == 'get':
@@ -241,7 +241,7 @@ if __name__ == '__main__':
         print("Wrong command")
         exit(1)
 
-    print(request.to_json())
+    # print("gNMI request: " + request.to_json())
 
     script = nsgcli.nsggnmi_main.NsgGnmiCommandLine(base_url=args.url,
                                                     token=args.token,

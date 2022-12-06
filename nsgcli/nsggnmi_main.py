@@ -12,42 +12,9 @@ from nsgcli.sseclient import SSEClient
 import base64
 import json
 
+APPLICATION_JSON = 'application/json'
+
 GNMI_EXEC_TEMPLATE = '/v2/nsg/cluster/net/{0}/exec/{1}?method={2}&address={3}&region={4}&agent={5}'
-
-usage_msg = """
-Send gNMI command.
-
-Usage:
-
-    nsggnmi.py --base-url=url [--token=token] [--network=netid] [--pattern=pattern] [help|capabilities|get|subscribe]
-    
-    -b, --base-url:  Server access URL without the path, for example 'http://nsg.domain.com:9100'
-    -t, --token:     Server API access token (if the server is configured with user authentication)
-    -n, --network:   NetSpyGlass network id (a number, default: 1).
-    -v, --version:   Print version and exit
-    -h, --help:      Print this help
-    
-Commands:
-    help [command]  
-        print help
-    
-    q|quit
-        quit interactive mode
-    
-    capabilities
-        send gNMI capabilities request to the device
-    
-    get
-        send gNMI get request to the device
-    
-    subscribe
-        send gNMI subscribe request to the device
-    
-"""
-
-
-def usage():
-    print(usage_msg)
 
 
 class NsgGnmiCommandLine:
@@ -64,7 +31,7 @@ class NsgGnmiCommandLine:
     def stream(self, command, address, data):
         req = GNMI_EXEC_TEMPLATE.format(self.netid, "gnmi", command, address, self.region, "all")
 
-        headers = {'Content-Type': 'application/json', 'X-NSG-Auth-API-Token': self.token}
+        headers = {'Content-Type': APPLICATION_JSON, 'X-NSG-Auth-API-Token': self.token}
 
         messages = SSEClient(self.base_url + req, data=data, headers=headers)
         for msg in messages:
@@ -83,7 +50,7 @@ class NsgGnmiCommandLine:
 
         req = GNMI_EXEC_TEMPLATE.format(self.netid, "gnmi", command, address, self.region, "all")
 
-        headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+        headers = {'Content-Type': APPLICATION_JSON, 'Accept': APPLICATION_JSON}
         response, error = api.call(self.base_url,
                                    'POST',
                                    req,
