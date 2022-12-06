@@ -5,10 +5,11 @@ import os
 import sys
 import re
 import gnmi.proto
-from google.protobuf.json_format import MessageToJson
 
 import nsgcli.nsggnmi_main
 import nsgcli.response_formatter
+
+from pandas import Timedelta
 
 
 def gnmi_path_generator(path_in_question: str,
@@ -24,6 +25,7 @@ def gnmi_path_generator(path_in_question: str,
     - "/container/container[key=value]"; the origin left empty
     """
     gnmi_path = gnmi.proto.Path()
+    gnmi_path._serialized_on_wire = True
     keys = []
     temp_path = ''
     temp_non_modified = ''
@@ -95,55 +97,141 @@ if __name__ == '__main__':
                         help='NetSpyGlass network id (a number, default: 1)')
 
     parser.add_argument('-r', '--region', dest='region', default='world',
-                        help='if present, all commands will be executed on given region. Equivalent to the command \'region\' in the interactive mode')
+                        help='Send command to the agents in the given region, default=world.')
 
     subparsers = parser.add_subparsers(required=True, dest='command', help='sub-command help')
 
     # create the parser for the "capabilities" command
-    parser_cap = subparsers.add_parser('capabilities', help='capabilities help')
-    parser_cap.add_argument('-a', '--address', required=True, dest='address', help='address help')
+    parser_cap = subparsers.add_parser('capabilities',
+                                       help='Send gNMI CapabilityRequest to the device and print the CapabilityResponse'
+                                            ' to the standard output. '
+                                            'See gNMI spec, 3.2 Capability Discovery')
+    parser_cap.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
 
     # create the parser for the "get" command
-    parser_get = subparsers.add_parser('get', help='get help')
-    parser_get.add_argument('-a', '--address', required=True, dest='address', help='address help')
-    parser_get.add_argument('-p', '--path', nargs='+', required=True, dest='path', help='path help')
+    parser_get = subparsers.add_parser('get',
+                                       help='Send gNMI GetRequest to the device and print the GetResponse '
+                                            'to the standard output. '
+                                            'See gNMI spec, 3.3 Retrieving Snapshots of State Information')
+    parser_get.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
+    parser_get.add_argument('-p', '--path', nargs='+', required=True, dest='path',
+                            help='XPath, example: \'/a/e[key=k1]/f/g\'')
+    parser_get.add_argument('--prefix', required=False, dest='prefix', default=None,
+                            help='XPath, example: \'/a/e[key=k1]/f/g\'')
+    parser_get.add_argument('--type', required=False, dest='type', default='ALL',
+                            choices=['ALL', 'CONFIG', 'STATE', 'OPERATIONAL'],
+                            help='Default is ALL')
+    parser_get.add_argument('--encoding', required=False, dest='encoding', default='JSON_IETF',
+                            choices=['JSON', 'BYTES', 'PROTO', 'ASCII', 'JSON_IETF'],
+                            help='Default is JSON_IETF')
 
     # create the parser for the "subscribe" command
-    parser_sub = subparsers.add_parser('subscribe', help='subscribe help')
-    parser_sub.add_argument('-a', '--address', required=True, dest='address', help='address help')
-    parser_sub.add_argument('-p', '--path', nargs='+', required=True, dest='path', help='path help')
+    parser_sub = subparsers.add_parser('subscribe',
+                                       help='Send gNMI SubscribeRequest to the device and print the SubscribeResponse '
+                                            'to the standard output. '
+                                            'See gNMI spec, 3.5 Subscribing to Telemetry Updates')
+    parser_sub.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
+    parser_sub.add_argument('-p', '--path', nargs='+', required=True, dest='path',
+                            help='XPath, example: \'/a/e[key=k1]/f/g\'')
+    parser_sub.add_argument('--prefix', required=False, dest='prefix', default=None,
+                            help='XPath, example: \'/a/e[key=k1]/f/g\'')
+    parser_sub.add_argument('--encoding', required=False, dest='encoding', default='JSON_IETF',
+                            choices=['JSON', 'BYTES', 'PROTO', 'ASCII', 'JSON_IETF'],
+                            help='The encoding that the target should use within the Notifications generated '
+                                 'corresponding to the SubscriptionList. Default is JSON_IETF')
+    parser_sub.add_argument('--mode', required=False, dest='mode', default='SAMPLE',
+                            choices=['TARGET_DEFINED', 'ON_CHANGE', 'SAMPLE'],
+                            help='Default is SAMPLE')
+    parser_sub.add_argument('--sample_interval', required=False, dest='sample_interval', default='2s',
+                            help='Default is 2s')
+    parser_sub.add_argument('--heartbeat_interval', required=False, dest='heartbeat_interval', default='2s',
+                            help='Specifies the maximum allowable silent period in nanoseconds when suppress_redundant '
+                                 'is in use. The target should send a value at least once in the period specified. '
+                                 'Default is 2s')
+    parser_sub.add_argument('--suppress_redundant', required=False, dest='suppress_redundant',
+                            action='store_true',
+                            help='Indicates whether values that have not changed should be sent in a SAMPLE '
+                                 'subscription.')
+    parser_sub.add_argument('--updates_only', required=False, dest='updates_only',
+                            action='store_true',
+                            help='An optional field to specify that only updates to current state should be '
+                                 'sent to a client. If set, the initial state is not sent to the client but '
+                                 'rather only the sync message followed by any subsequent updates to the '
+                                 'current state. For ONCE and POLL modes, this causes the server to send only '
+                                 'the sync message (Sec. 3.5.2.3).')
+    parser_sub.add_argument('--allow_aggregation', required=False, dest='allow_aggregation',
+                            action='store_true',
+                            help='Whether elements of the schema that are marked as eligible for aggregation should be '
+                                 'aggregated or not.')
+    parser_sub.add_argument('--use_aliases', required=False, dest='use_aliases',
+                            action='store_true',
+                            help='Whether target defined aliases are allowed within the subscription.')
+    parser_sub.add_argument('--qos', required=False, dest='qos', type=int, default=None,
+                            help='specifies the DSCP value to be set on transmitted telemetry updates from the target. '
+                                 'Reference: gNMI Specification Section 3.5.1.2')
+    parser_sub.add_argument('--streaming_mode', required=False, dest='mode', default='STREAM',
+                            choices=['STREAM', 'ONCE', 'POLL'],
+                            help='Default is STREAM')
 
     args = parser.parse_args()
-    print(args.command)
-    print(args.address)
-    # print(args.path)
-    print(args.network)
-    print(args.url)
-    print(args.token)
-    print(args.region)
+    print(args)
 
     request = None
     if args.command == 'get':
+        #     use_models: List["ModelData"] = betterproto.message_field(6)
+        path_list = []
+        for xpath in args.path:
+            path_list.append(gnmi_path_generator(xpath))
+
+        prefix = None
+        if args.prefix:
+            prefix = gnmi_path_generator(args.prefix)
+
         request = gnmi.proto.GetRequest(
-            path=[gnmi_path_generator(args.path[0])],
-            type=gnmi.proto.GetRequestDataType.ALL,
-            encoding=gnmi.proto.Encoding.JSON_IETF
+            prefix=prefix,
+            path=path_list,
+            type=gnmi.proto.GetRequestDataType.from_string(args.type),
+            encoding=gnmi.proto.Encoding.from_string(args.encoding)
         )
     elif args.command == 'subscribe':
-        path = gnmi_path_generator(args.path[0])
-        path._serialized_on_wire = True
-        subscription = gnmi.proto.Subscription(
-            path=path,
-            mode=gnmi.proto.SubscriptionMode.SAMPLE,
-            sample_interval=2000000000
-        )
+        prefix = None
+        if args.prefix:
+            prefix = gnmi_path_generator(args.prefix)
 
+        qos = None
+        if args.qos:
+            gnmi.proto.QoSMarking(args.qos)
+
+        sample_interval = Timedelta(args.sample_interval)
+        heartbeat_interval = Timedelta(args.heartbeat_interval)
+        subscription_list_ = []
+        for xpath in args.path:
+            subscription_list_.append(
+                gnmi.proto.Subscription(
+                    path=gnmi_path_generator(xpath),
+                    mode=gnmi.proto.SubscriptionMode.from_string(args.mode),
+                    sample_interval=sample_interval.delta,
+                    suppress_redundant=args.suppress_redundant,
+                    heartbeat_interval=heartbeat_interval.delta
+                )
+            )
+
+        #     # The set of schemas that define the elements of the data tree that should be
+        #     # sent by the target.
+        #     use_models: List["ModelData"] = betterproto.message_field(7)
         subscription_list = gnmi.proto.SubscriptionList(
-            subscription=[subscription],
-            encoding=gnmi.proto.Encoding.JSON_IETF,
-            mode=gnmi.proto.SubscriptionListMode.STREAM
+            prefix=prefix,
+            subscription=subscription_list_,
+            encoding=gnmi.proto.Encoding.from_string(args.encoding),
+            mode=gnmi.proto.SubscriptionListMode.from_string(args.streaming_mode),
+            allow_aggregation=args.allow_aggregation,
+            updates_only=args.updates_only,
+            use_aliases=args.use_aliases,
+            qos=qos
         )
 
+        #     poll: "Poll" = betterproto.message_field(3, group="request")
+        #     aliases: "AliasList" = betterproto.message_field(4, group="request")
         request = gnmi.proto.SubscribeRequest(
             subscribe=subscription_list
         )

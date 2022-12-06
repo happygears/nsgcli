@@ -7,12 +7,12 @@ This module sends gnmi commands to the NSG Agent via NSG API server
 """
 from nsgcli import api
 from nsgcli.agent_commands import HashableAgentCommandResponse
-from nsgcli.exec_commands import GNMI_EXEC_TEMPLATE
 from nsgcli.sseclient import SSEClient
 
 import base64
 import json
-import urllib3
+
+GNMI_EXEC_TEMPLATE = '/v2/nsg/cluster/net/{0}/exec/{1}?method={2}&address={3}&region={4}&agent={5}'
 
 usage_msg = """
 Send gNMI command.
@@ -116,7 +116,7 @@ class NsgGnmiCommandLine:
                     acr_json = json.loads(line)
                     for notification in acr_json['notification']:
                         for update in notification['update']:
-                            if 'jsonIetf' in update['val']:
+                            if 'jsonIetfVal' in update['val']:
                                 update['val']['jsonIetf'] = json.loads(base64.b64decode(update['val'].pop('jsonIetfVal')))
 
                     print('{0} | {1}'.format(acr['agent'], json.dumps(acr_json, indent=4)))
