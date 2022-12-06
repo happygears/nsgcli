@@ -20,9 +20,9 @@ jobs:
         run: echo "::set-output name=allow-step::$([[ "$(grep -icm1 '${{ github.ref }}' .github/workflows/.build-branch-allow)" = 1 ]] && echo ALLOW || echo NOT_ALLOW)"
 
       - name: Set up Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 2.7
+          python-version: 3.7
 
       - name: Install build, wheel
         run: |
