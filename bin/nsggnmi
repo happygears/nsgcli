@@ -107,6 +107,9 @@ if __name__ == '__main__':
                                             'CapabilityResponse to the standard output. '
                                             'See gNMI spec, 3.2 Capability Discovery')
     parser_cap.add_argument('-a', '--address', required=True, dest='address', help='device IP address')
+    parser_cap.add_argument('--xpath', required=False, dest='xpath',
+                            help='Filter the resulting json by applying XPath, '
+                                 'find the specification at https://goessner.net/articles/JsonPath/')
 
     # create the parser for the "get" command
     parser_get = subparsers.add_parser('get',
@@ -124,6 +127,9 @@ if __name__ == '__main__':
     parser_get.add_argument('--encoding', required=False, dest='encoding', default='JSON_IETF',
                             choices=['JSON', 'BYTES', 'PROTO', 'ASCII', 'JSON_IETF'],
                             help='Default is JSON_IETF')
+    parser_get.add_argument('--xpath', required=False, dest='xpath',
+                            help='Filter the resulting json by applying XPath, '
+                                 'find the specification at https://goessner.net/articles/JsonPath/')
 
     # create the parser for the "subscribe" command
     parser_sub = subparsers.add_parser('subscribe',
@@ -172,6 +178,9 @@ if __name__ == '__main__':
     parser_sub.add_argument('--streaming_mode', required=False, dest='streaming_mode', default='STREAM',
                             choices=['STREAM', 'ONCE', 'POLL'],
                             help='Default is STREAM')
+    parser_sub.add_argument('--xpath', required=False, dest='xpath',
+                            help='Filter the resulting json by applying XPath, '
+                                 'find the specification at https://goessner.net/articles/JsonPath/')
 
     args = parser.parse_args()
     # print("CLI arguments: " + args)
@@ -246,7 +255,8 @@ if __name__ == '__main__':
     script = nsgcli.nsggnmi_main.NsgGnmiCommandLine(base_url=args.url,
                                                     token=args.token,
                                                     netid=args.network,
-                                                    region=args.region)
+                                                    region=args.region,
+                                                    xpath=args.xpath)
     try:
         if args.command == 'subscribe':
             script.stream(args.command, args.address, request.to_dict())
