@@ -15,8 +15,6 @@ import json
 
 APPLICATION_JSON = 'application/json'
 
-GNMI_EXEC_TEMPLATE = '/v2/nsg/cluster/net/{0}/exec/{1}?method={2}&address={3}&region={4}&agent={5}'
-
 
 class NsgGnmiCommandLine:
 
@@ -31,9 +29,12 @@ class NsgGnmiCommandLine:
 
     ##########################################################################################
     def stream(self, command, address, data):
-        req = GNMI_EXEC_TEMPLATE.format(self.netid, "gnmi", command, address, self.region, "all")
+        req = self.compose_gnmi_api_url(address, command)
 
-        headers = {'Content-Type': APPLICATION_JSON, 'X-NSG-Auth-API-Token': self.token}
+        headers = {
+                'Content-Type': APPLICATION_JSON,
+                'X-NSG-Auth-API-Token': self.token
+        }
 
         jsonpath_expr = None
         if self.xpath:
@@ -54,7 +55,7 @@ class NsgGnmiCommandLine:
         send command to agents and pick up replies.
         """
 
-        req = GNMI_EXEC_TEMPLATE.format(self.netid, "gnmi", command, address, self.region, "all")
+        req = self.compose_gnmi_api_url(address, command)
 
         headers = {'Content-Type': APPLICATION_JSON, 'Accept': APPLICATION_JSON}
         response, error = api.call(self.base_url,
@@ -76,6 +77,12 @@ class NsgGnmiCommandLine:
                     replies.append((status, HashableAgentCommandResponse(acr)))
                 for status, acr in replies:
                     self.print_agent_response(acr, status, self.xpath)
+
+    def compose_gnmi_api_url(self, address, command):
+        GNMI_EXEC_TEMPLATE = '/v2/gnmi/net/{0}/exec/{1}?address={2}&region={3}&agent={4}'
+        return GNMI_EXEC_TEMPLATE.format(self.netid, command, address, self.region, "all")
+        # GNMI_EXEC_TEMPLATE = '/v2/nsg/cluster/net/{0}/exec/{1}?method={2}&address={3}&region={4}&agent={5}'
+        # return GNMI_EXEC_TEMPLATE.format(self.netid, "gnmi", command, address, self.region, "all")
 
     @staticmethod
     def print_agent_response(acr, status, xpath):

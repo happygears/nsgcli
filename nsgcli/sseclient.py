@@ -46,7 +46,10 @@ class SSEClient(object):
         # Keep data here as it streams in
         self.buf = ''
 
-        self._connect_post()
+        if data:
+            self._connect_post()
+        else:
+            self._connect()
 
     def _connect_post(self):
         if self.last_id:
