@@ -26,7 +26,8 @@ setuptools.setup(name='nsgcli',
                  packages=setuptools.find_packages(),
                  python_requires='>=3.6',
                  install_requires=[
-                     'requests', 'requests-unixsocket', 'pyhocon', 'typing', 'python-dateutil', 'pytz', 'tabulate'
+                     'requests', 'requests-unixsocket', 'pyhocon', 'typing', 'python-dateutil', 'pytz', 'tabulate',
+                     'gnmi-proto', 'pandas', 'jsonpath-ng'
                  ],
                  scripts=['bin/nsgcli', 'bin/nsgql', 'bin/silence', 'bin/nsggrok'],
                  include_package_data=True,

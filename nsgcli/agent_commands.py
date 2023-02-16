@@ -74,6 +74,21 @@ set_property:    set (or query) value of JVM system property
             agent <agent_name> set_property foo
             agent <agent_name> set_property foo bar
 
+set_log_level:  Contacts given agent (or all), and changes the log level of the particular logger for 
+                specified time interval.
+        
+        Arguments:
+        
+            agent <agent_name> set_log_level logger-name logger-name [duration]
+
+            logger-name - full class name or package name, if package name specified,
+                          log level will be applied to all classes in a package
+            logger-name - one of [debug, info, warn, error, trace, off, fatal, all]
+            duration    - Optional. Time interval of how long the changed log level will be in effect.
+                          When interval expires, log level is reverted to original value.
+                          Value has to comply with ISO-8601 duration format. Ex. PT10M = 10 minutes.
+                          If not provided, default interval is 10 minutes.
+
 measurements:    query current values of agent monitoring variables
 
         Example:
@@ -229,6 +244,23 @@ class AgentCommands(sub_command.SubCommand, object):
         """
         cmd_args = self.make_args(args)
         self.common_command('set_property', cmd_args)
+
+    def do_set_log_level(self, args):
+        """
+        Contacts given agent (or all), and changes the log level of the particular logger for specified time interval.
+
+        0 - logger-name - full class name or package name, if package name specified,
+                          log level will be applied to all classes in a package
+        1 - log-level   - one of [debug, info, warn, error, trace, off, fatal, all]
+        2 - duration    - Optional. Time interval of how long the changed log level will be in effect.
+                          When interval expires, log level is reverted to original value.
+                          Value has to comply with ISO-8601 duration format. Ex. PT10M = 10 minutes.
+                          If not provided, default interval is 10 minutes.
+
+        agent <agent_name> set_log_level logger level [duration]
+        """
+        cmd_args = self.make_args(args)
+        self.common_command('set_log_level', cmd_args)
 
     def do_get_syslog_stats(self, args):
         """
