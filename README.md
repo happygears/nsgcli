@@ -50,3 +50,18 @@ Example of API call made by `nsgcli` to nsg-api service:
   "logSyslogSeverityCode": 5
   }
   ```
+  
+* Meraki API call
+```bash
+curl -G -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/v2/nsg/cluster/net/1/exec/api --data-urlencode 'region=world' --data-urlencode 'url=https://api.meraki.com/api/v1/organizations/626563298157920259/devices' --data-urlencode 'method=GET' --data-urlencode 'args=gap-meraki'
+```
+
+* Test connection to remote server
+```bash
+curl -G -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/v2/nsg/cluster/net/1/exec/connect --data-urlencode 'region=world' --data-urlencode 'args=10.210.24.112 9339 1000'
+```
+
+* Set log level
+```bash
+curl -G -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/v2/nsg/cluster/net/1/exec/set_log_level --data-urlencode 'region=world' --data-urlencode 'args=tme-server-15v io.grpc DEBUG'
+```

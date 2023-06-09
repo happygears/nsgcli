@@ -15,9 +15,7 @@ Status: {m[status]}
 Output:
 {m[output]}"""
 
-CMD_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
-CMD_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?args={2}'
-SNMP_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?region={2}&args={3}'
+CMD_TEMPLATE_URL_WITH_AGENT = '/v3/net/{0}/exec/{1}/agent/{2}?args={3}'
 
 AGENT_LOG_DIR = '/opt/nsg-agent/var/logs'
 HELP = """
@@ -139,11 +137,6 @@ class AgentCommands(sub_command.SubCommand, object):
     def help(self):
         print(HELP)
 
-    def make_args(self, input_arg):
-        args = input_arg.split()
-        args.insert(0, self.agent_name)  # agent name must be the first argument
-        return ' '.join(args)
-
     def do_log(self, arg):
         """
         retrieve agent's log file
@@ -159,18 +152,13 @@ class AgentCommands(sub_command.SubCommand, object):
         args[-1] = AGENT_LOG_DIR + '/' + args[-1]
         self.do_tail(' '.join(args))
 
-    def do_tail(self, arg):
+    def do_tail(self, args):
         """
         tail a file on an agent.
 
         Example: agent agent_name tail -100 /opt/nsg-agent/home/logs/agent.log
         """
-        cmd_args = self.make_args(arg)
-
-        if self.current_region:
-            request = CMD_TEMPLATE_WITH_REGION.format(self.netid, 'tail', self.current_region, cmd_args)
-        else:
-            request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'tail', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'tail', self.agent_name, args)
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
                                    response_format='json_array', error_format='json_array')
@@ -179,18 +167,13 @@ class AgentCommands(sub_command.SubCommand, object):
                 status = self.parse_status(acr)
                 self.print_agent_response(acr, status)
 
-    def do_probe_snmp(self, arg):
+    def do_probe_snmp(self, args):
         """
         try to discover working snmp configuration for the device
 
         Example: agent agent_name probe_snmp <device_address> <snmp_conf_name_1> <snmp_conf_name_2> ...
         """
-        cmd_args = self.make_args(arg)
-
-        if self.current_region:
-            request = CMD_TEMPLATE_WITH_REGION.format(self.netid, 'discover-snmp-access', self.current_region, cmd_args)
-        else:
-            request = CMD_TEMPLATE_WITHOUT_REGION.format(self.netid, 'discover-snmp-access', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'tail', self.agent_name, ' '.join(args))
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
                                    response_format='json_array', error_format='json_array')
@@ -206,16 +189,18 @@ class AgentCommands(sub_command.SubCommand, object):
 
         Example: agent find 1.2.3.4
         """
-        self.common_command('find_agent', args, hide_errors=True)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'find_agent', self.agent_name, ' '.join(args))
 
-    def do_restart(self, arg):
+        self.common_command(request, hide_errors=True)
+
+    def do_restart(self, args):
         """
         Restart agent with given name
 
         Example:  agent agent_name restart
         """
-        cmd_args = self.make_args(arg)
-        self.common_command('restart_agent', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'restart', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_snmpget(self, args):
         """
@@ -223,8 +208,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> snmp_get <address> oid [timeout_ms]
         """
-        cmd_args = self.make_args(args)
-        self.snmp_command('snmpget', cmd_args)
+
+        self.snmp_command('snmpget', args)
 
     def do_snmpwalk(self, args):
         """
@@ -232,8 +217,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> snmp_walk <address> oid [timeout_ms]
         """
-        cmd_args = self.make_args(args)
-        self.snmp_command('snmpwalk', cmd_args)
+
+        self.snmp_command('snmpwalk', args)
 
     def do_set_property(self, args):
         """
@@ -242,8 +227,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> set_property key [value]
         """
-        cmd_args = self.make_args(args)
-        self.common_command('set_property', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'set_property', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_set_log_level(self, args):
         """
@@ -259,8 +244,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> set_log_level logger level [duration]
         """
-        cmd_args = self.make_args(args)
-        self.common_command('set_log_level', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'set_log_level', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_get_syslog_stats(self, args):
         """
@@ -268,8 +253,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> get_syslog_stats
         """
-        cmd_args = self.make_args(args)
-        self.common_command('get_syslog_stats', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'get_syslog_stats', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_get_configuration(self, args):
         """
@@ -277,8 +262,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> get_configuration
         """
-        cmd_args = self.make_args(args)
-        self.common_command('get_configuration', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'get_configuration', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_measurements(self, args):
         """
@@ -287,8 +272,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> measurements
         """
-        cmd_args = self.make_args(args)
-        self.common_command('measurements', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'measurements', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def do_bulk_request(self, args):
         """
@@ -297,8 +282,8 @@ class AgentCommands(sub_command.SubCommand, object):
 
         agent <agent_name> bulk_request <device_ID>
         """
-        cmd_args = self.make_args(args)
-        self.common_command('bulk_request', cmd_args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'bulk_request', self.agent_name, ' '.join(args))
+        self.common_command(request)
 
     def snmp_command(self, command, arg):
         """
@@ -316,7 +301,7 @@ class AgentCommands(sub_command.SubCommand, object):
         if len(args) < 4:
             args.append('2000')
 
-        request = SNMP_TEMPLATE_WITH_REGION.format(self.netid, command, self.current_region, ' '.join(args))
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, command, self.agent_name, ' '.join(args))
 
         # This call returns list of AgentCommandResponse objects in json format
         headers = {'Accept-Encoding': ''}
