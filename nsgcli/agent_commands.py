@@ -228,7 +228,7 @@ class AgentCommands(sub_command.SubCommand, object):
         agent <agent_name> set_property key [value]
         """
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'set_property', self.agent_name, ' '.join(args))
-        self.common_command(request)
+        self.common_command(request, method='PUT')
 
     def do_set_log_level(self, args):
         """
@@ -245,7 +245,7 @@ class AgentCommands(sub_command.SubCommand, object):
         agent <agent_name> set_log_level logger level [duration]
         """
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'set_log_level', self.agent_name, ' '.join(args))
-        self.common_command(request)
+        self.common_command(request, method='PUT')
 
     def do_get_syslog_stats(self, args):
         """
