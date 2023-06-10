@@ -17,8 +17,8 @@ Status: {m[status]}
 Output: 
 {m[output]}"""
 
-EXEC_TEMPLATE_WITH_REGION = 'v3/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
-EXEC_TEMPLATE_WITHOUT_REGION = 'v3/net/{0}/exec/{1}?address={2}&args={3}'
+EXEC_TEMPLATE_WITH_REGION = 'apiv3/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
+EXEC_TEMPLATE_WITHOUT_REGION = 'apiv3/net/{0}/exec/{1}?address={2}&args={3}'
 
 
 class ExecCommands(sub_command.SubCommand, object):
