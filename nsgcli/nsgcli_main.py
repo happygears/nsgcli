@@ -15,7 +15,6 @@ from . import discovery_commands
 from . import exec_commands
 from . import search
 from . import show
-from . import snmp_commands
 from . import sub_command
 
 TIME_FORMAT_MS = 'ms'
@@ -31,7 +30,6 @@ CLUSTER_ARGS = ['status', 'summary', 'os', 'jvm', 'tsdb', 'python', 'c3p0']
 SERVER_ARGS = ['pause', 'status']
 EXEC_ARGS = ['ping', 'fping', 'traceroute']
 FIND_AGENT_ARGS = ['find_agent']
-SNMP_ARGS = ['get', 'walk']
 DISCOVERY_ARGS = ['start', 'pause', 'resume', 'submit', 'status']
 HUD_ARGS = ['reset']
 DEVICE_ARGS = ['download']
@@ -305,13 +303,13 @@ class NsgCLI(sub_command.SubCommand, object):
         args = arg.split(' ')
         # arg[0] = agent_name
         # arg[1] = command
-        if arg[0] == 'find':
+        if args[0] == 'find':
             # this command does not need agent name
             agent_name = 'all'
-            work_args = args
         else:
             agent_name = args.pop(0)
-            work_args = ' '.join(args)
+
+        work_args = ' '.join(args)
         if not work_args:
             sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
                                                    region=self.current_region)
@@ -350,25 +348,6 @@ class NsgCLI(sub_command.SubCommand, object):
         return self.complete_cmd(text, EXEC_ARGS)
 
     ##########################################################################################
-    def do_snmp(self, arg):
-        """
-        snmp walk .1
-
-        @param arg:   words after 'exec' as one string
-        """
-        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
-        if not arg:
-            sub_cmd.cmdloop()
-        else:
-            sub_cmd.onecmd(arg)
-
-    def help_snmp(self):
-        sub_cmd = snmp_commands.SnmpCommands(self.base_url, self.token, self.netid, region=self.current_region)
-        sub_cmd.help()
-
-    def complete_snmp(self, text, _line, _begidx, _endidx):
-        return self.complete_cmd(text, SNMP_ARGS)
-
     def basic_command(self, request, data=None):
         """
         execute simple command via API call and return deserialized response

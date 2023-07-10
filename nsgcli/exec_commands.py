@@ -17,8 +17,8 @@ Status: {m[status]}
 Output: 
 {m[output]}"""
 
-EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
-EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
+EXEC_TEMPLATE_WITH_REGION = 'apiv3/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
+EXEC_TEMPLATE_WITHOUT_REGION = 'apiv3/net/{0}/exec/{1}?address={2}&args={3}'
 
 
 class ExecCommands(sub_command.SubCommand, object):
@@ -78,23 +78,50 @@ class ExecCommands(sub_command.SubCommand, object):
                 fping_status = self.parse_fping_status(acr)
                 self.print_agent_response(acr, fping_status)
 
-    def do_ping(self, args):
+    def do_ping(self, arg):
         """
         Tries to ping the address. If region has been selected, uses only agents in
         the region. Otherwise tries all agents in all regions.
 
         ping <address>
         """
-        self.common_command('ping', args, hide_errors=False)
+        args = arg.split()
+        if not args:
+            print('At least one argument (target address) is required')
+            self.do_help('ping')
+            return
 
-    def do_traceroute(self, args):
+        address = args.pop(0)
+        cmd_args = ' '.join(args)
+
+        if self.current_region:
+            request = EXEC_TEMPLATE_WITH_REGION.format(self.netid, 'ping', address, self.current_region, cmd_args)
+        else:
+            request = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, 'ping', address, cmd_args)
+        self.common_command(request, hide_errors=False)
+
+    def do_traceroute(self, arg):
         """
         Runs traceroute to the given the address. If region has been selected, uses only agents in
         the region. Otherwise tries all agents in all regions.
 
         traceroute <address>
         """
-        self.common_command('traceroute', args, deduplicate_replies=False, hide_errors=False)
+        args = arg.split()
+        if not args:
+            print('At least one argument (target address) is required')
+            self.do_help('traceroute')
+            return
+
+        address = args.pop(0)
+        cmd_args = ' '.join(args)
+
+        if self.current_region:
+            request = EXEC_TEMPLATE_WITH_REGION.format(self.netid, 'traceroute', address, self.current_region, cmd_args)
+        else:
+            request = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, 'traceroute', address, cmd_args)
+
+        self.common_command(request, deduplicate_replies=False, hide_errors=False)
 
     def parse_fping_status(self, acr):
         ec = acr['exitStatus']

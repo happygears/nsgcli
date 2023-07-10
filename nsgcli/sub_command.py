@@ -130,7 +130,7 @@ class SubCommand(cmd.Cmd, object):
         else:
             return str(response)
 
-    def common_command(self, command, arg, hide_errors=True, deduplicate_replies=True):
+    def common_command(self, req, method='GET', hide_errors=True, deduplicate_replies=True):
         """
         send command to agents and pick up replies. If hide_errors=True, only successful
         replies are printed, otherwise all replies are printed.
@@ -138,23 +138,9 @@ class SubCommand(cmd.Cmd, object):
         If deduplicate_replies=True, duplicate replies are suppressed (e.g. when multiple agents
         reply)
         """
-        args = arg.split()
-        if not args:
-            print('At least one argument (target address) is required')
-            self.do_help(command)
-            return
 
-        address = args.pop(0)
-        cmd_args = ' '.join(args)
-
-        if self.current_region:
-            req = EXEC_TEMPLATE_WITH_REGION.format(self.netid, command, address, self.current_region, cmd_args)
-        else:
-            req = EXEC_TEMPLATE_WITHOUT_REGION.format(self.netid, command, address, cmd_args)
-
-        # print(response)
         headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
-        response, error = api.call(self.base_url, 'GET', req, token=self.token,
+        response, error = api.call(self.base_url, method, req, token=self.token,
                                    headers=headers, stream=True, response_format='json_array',
                                    error_format='json_array')
         if error is None:
