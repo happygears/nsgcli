@@ -34,7 +34,7 @@ tail: tail a file on an agent.
 
         Example:
 
-            agent <agent_name> tail -100 /opt/nsg-agent/home/logs/agent.log
+            agent <agent_name> tail -100 /opt/nsg-agent/var/logs/agent.log
 
 
 probe_snmp: discover working snmp configuration for the device
@@ -156,9 +156,9 @@ class AgentCommands(sub_command.SubCommand, object):
         """
         tail a file on an agent.
 
-        Example: agent agent_name tail -100 /opt/nsg-agent/home/logs/agent.log
+        Example: agent agent_name tail -100 /opt/nsg-agent/var/logs/agent.log
         """
-        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'tail', self.agent_name, args)
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'tail', self.agent_name, 'args=' + args)
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
                                    response_format='json_array', error_format='json_array')
@@ -191,7 +191,14 @@ class AgentCommands(sub_command.SubCommand, object):
 
         Example: agent find 1.2.3.4
         """
-        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'find_agent', self.agent_name, 'address=' + args)
+        if not self.current_region or self.current_region.isspace():
+            print("Region must be specified for this command")
+            exit(1)
+
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid,
+                                                     'find_agent',
+                                                     self.agent_name,
+                                                     'region=' + self.current_region + '&address=' + args)
 
         self.common_command(request, hide_errors=True)
 

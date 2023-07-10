@@ -303,13 +303,13 @@ class NsgCLI(sub_command.SubCommand, object):
         args = arg.split(' ')
         # arg[0] = agent_name
         # arg[1] = command
-        if arg[0] == 'find':
+        if args[0] == 'find':
             # this command does not need agent name
             agent_name = 'all'
-            work_args = args
         else:
             agent_name = args.pop(0)
-            work_args = ' '.join(args)
+
+        work_args = ' '.join(args)
         if not work_args:
             sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
                                                    region=self.current_region)
