@@ -211,6 +211,25 @@ class AgentCommands(sub_command.SubCommand, object):
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'restart', self.agent_name, '')
         self.common_command(request)
 
+    def do_ping(self, arg):
+        """
+        Tries to ping the address. If region has been selected, uses only agents in
+        the region. Otherwise tries all agents in all regions.
+
+        agent agent_name ping <address>
+        """
+        args = arg.split()
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'ping', self.agent_name,
+                                                     'address=' + args.pop(0) + '&args=' + ' '.join(args)
+                                                     )
+
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
+                                   response_format='json_array', error_format='json_array')
+        if error is None:
+            for acr in response:
+                status = self.parse_status(acr)
+                self.print_agent_response(acr, status)
+
     def do_snmpget(self, args):
         """
         Execute snmp GET command using agents in the currently selected region
