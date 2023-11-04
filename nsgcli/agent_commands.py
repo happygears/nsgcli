@@ -92,6 +92,19 @@ measurements:    query current values of agent monitoring variables
         Example:
 
             agent <agent_name> measurements
+            
+ping:   Tries to ping the address from the given agent.
+
+        Arguments:
+
+            agent <agent_name> ping <address>
+            
+            address - IP address
+
+        Example:
+
+            agent <agent_name> ping 8.8.8.8
+            
 
 """
 
@@ -213,10 +226,9 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def do_ping(self, arg):
         """
-        Tries to ping the address. If region has been selected, uses only agents in
-        the region. Otherwise tries all agents in all regions.
+        Tries to ping the address from the given agent.
 
-        agent agent_name ping <address>
+        agent <agent_name> ping <address>
         """
         args = arg.split()
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'ping', self.agent_name,
