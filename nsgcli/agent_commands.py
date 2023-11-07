@@ -8,6 +8,7 @@ This module implements subset of NetSpyGlass CLI commands
 
 from . import api
 from . import sub_command
+from .exec_commands import ExecCommands
 
 RESPONSE_FORMAT = """
 Source: {m[agent]} ({m[agentAddress]})
@@ -105,7 +106,25 @@ ping:   Tries to ping the address from the given agent.
 
             agent <agent_name> ping 8.8.8.8
             
+fping:  Runs fping to give address on a given agent.
 
+        Arguments:
+
+            agent <agent_name> fping <address> [fping args]
+
+        fping exit codes:
+
+        Exit status is 0 if all the hosts are reachable,
+            1 if some hosts were unreachable,
+            2 if any IP addresses were not found,
+            3 for invalid command line arguments, and
+            4 for a system call failure.
+            
+traceroute: Runs traceroute to the given the address.
+
+        Arguments:
+
+            agent <agent_name> traceroute <address>            
 """
 
 
@@ -232,8 +251,7 @@ class AgentCommands(sub_command.SubCommand, object):
         """
         args = arg.split()
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'ping', self.agent_name,
-                                                     'address=' + args.pop(0) + '&args=' + ' '.join(args)
-                                                     )
+                                                     'address=' + args.pop(0) + '&args=' + ' '.join(args))
 
         response, error = api.call(self.base_url, 'GET', request, token=self.token, stream=True,
                                    response_format='json_array', error_format='json_array')
@@ -241,6 +259,45 @@ class AgentCommands(sub_command.SubCommand, object):
             for acr in response:
                 status = self.parse_status(acr)
                 self.print_agent_response(acr, status)
+
+    def do_fping(self, arg):
+        """
+        Runs fping to give address on a given agent.
+
+        fping <address> [fping args]
+
+        fping exit codes:
+
+        Exit status is 0 if all the hosts are reachable,
+            1 if some hosts were unreachable,
+            2 if any IP addresses were not found,
+            3 for invalid command line arguments, and
+            4 for a system call failure.
+        """
+        args = arg.split()
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'fping', self.agent_name,
+                                           'address=' + args.pop(0) + '&args=' + ' '.join(args))
+
+        headers = {'Accept-Encoding': ''}  # to turn off gzip encoding to make response streaming work
+        response, error = api.call(self.base_url, 'GET', request, token=self.token, headers=headers, stream=True,
+                                   response_format='json_array', error_format='json_array')
+        if error is None:
+            for acr in response:
+                fping_status = ExecCommands.parse_fping_status(acr)
+                self.print_agent_response(acr, fping_status)
+
+    def do_traceroute(self, arg):
+        """
+        Runs traceroute to the given the address.
+
+        traceroute <address>
+        """
+        args = arg.split()
+
+        request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid, 'traceroute', self.agent_name,
+                                                     'address=' + args.pop(0) + '&args=' + ' '.join(args))
+
+        self.common_command(request, deduplicate_replies=False, hide_errors=False)
 
     def do_snmpget(self, args):
         """

@@ -123,7 +123,7 @@ class ExecCommands(sub_command.SubCommand, object):
 
         self.common_command(request, deduplicate_replies=False, hide_errors=False)
 
-    def parse_fping_status(self, acr):
+    def parse_fping_status(acr):
         ec = acr['exitStatus']
         if ec == 0:
             status = 'ok'
