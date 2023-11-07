@@ -94,7 +94,7 @@ measurements:    query current values of agent monitoring variables
 
             agent <agent_name> measurements
             
-ping:   Tries to ping the address from the given agent.
+ping:   Run ping with destination address on given agent.
 
         Arguments:
 
@@ -106,7 +106,7 @@ ping:   Tries to ping the address from the given agent.
 
             agent <agent_name> ping 8.8.8.8
             
-fping:  Runs fping to give address on a given agent.
+fping:  Run fping with destination address on given agent.
 
         Arguments:
 
@@ -120,7 +120,7 @@ fping:  Runs fping to give address on a given agent.
             3 for invalid command line arguments, and
             4 for a system call failure.
             
-traceroute: Runs traceroute to the given the address.
+traceroute: Run traceroute with destination address on given agent.
 
         Arguments:
 
@@ -245,7 +245,7 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def do_ping(self, arg):
         """
-        Tries to ping the address from the given agent.
+        Run ping with destination address on given agent.
 
         agent <agent_name> ping <address>
         """
@@ -262,9 +262,9 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def do_fping(self, arg):
         """
-        Runs fping to give address on a given agent.
+        Run fping with destination address on given agent.
 
-        fping <address> [fping args]
+        agent <agent_name> fping <address> [fping args]
 
         fping exit codes:
 
@@ -288,9 +288,9 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def do_traceroute(self, arg):
         """
-        Runs traceroute to the given the address.
+        Run traceroute with destination address on given agent.
 
-        traceroute <address>
+        agent <agent_name> traceroute <address>
         """
         args = arg.split()
 
