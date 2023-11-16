@@ -75,7 +75,7 @@ class ExecCommands(sub_command.SubCommand, object):
                                    response_format='json_array', error_format='json_array')
         if error is None:
             for acr in response:
-                fping_status = self.parse_fping_status(acr)
+                fping_status = ExecCommands.parse_fping_status(acr)
                 self.print_agent_response(acr, fping_status)
 
     def do_ping(self, arg):

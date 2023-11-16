@@ -65,3 +65,8 @@ curl -G -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/v2/nsg/cluster
 ```bash
 curl -G -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/v2/nsg/cluster/net/1/exec/set_log_level --data-urlencode 'region=world' --data-urlencode 'args=tme-server-15v io.grpc DEBUG'
 ```
+
+* Send PING command to an agent
+```bash
+curl -L -H "X-NSG-Auth-API-Token:$NSG_API_TOKEN" $NSG_SERVICE_URL/apiv3/net/1/exec/ping/agent/vkhome?address=127.0.0.1
+```
