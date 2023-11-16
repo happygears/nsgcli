@@ -223,14 +223,14 @@ class AgentCommands(sub_command.SubCommand, object):
 
         Example: agent find 1.2.3.4
         """
-        if not self.current_region or self.current_region.isspace():
-            print("Region must be specified for this command")
-            exit(1)
+        region = ''
+        if self.current_region and not self.current_region.isspace():
+            region = '&region=' + self.current_region
 
         request = CMD_TEMPLATE_URL_WITH_AGENT.format(self.netid,
                                                      'find_agent',
                                                      self.agent_name,
-                                                     'region=' + self.current_region + '&address=' + args)
+                                                     'address=' + args + region)
 
         self.common_command(request, hide_errors=True)
 
