@@ -40,6 +40,12 @@ class NsgQLCommandLine(Cmd):
         print('Quitting.')
         raise SystemExit
 
+    def do_transpose(self, arg):
+        self.execute('TRANSPOSE {0}'.format(arg))
+
+    def do_TRANSPOSE(self, arg):
+        self.execute('TRANSPOSE {0}'.format(arg))
+
     def do_select(self, arg):
         self.execute('SELECT {0}'.format(arg))
 
