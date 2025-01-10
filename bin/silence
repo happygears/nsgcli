@@ -37,9 +37,10 @@ Usage:
        --expiration:   silence expiration time, minutes. The silence stops at the time calculated as
                        the start time plus expiration time. 
        --key:          alert key to match
-       --var_name:     variable name to match
+       --var_name:     variable name. Accepts regular expression.
        --dev_id:       device Id to match
-       --dev_name:     device name
+       --dev_name:     device name. Accepts regular expression.
+       --comp_name:    component name. Accepts regular expression.
        --index:        component index to match
        --tags:         a string that represents comma-separated list of tags to match. Tag can be defined either
                        as 'Facet.word' or just 'Facet'. The latter is equivalent to matching 'Facet.*'. Tag
@@ -48,8 +49,8 @@ Usage:
        --reason:       argument is a text string that describes the reason this silence is being added
        -h --help:      print this usage summary
 
-    Variable (--var_name) and device name (--dev_name) match supports regular expressions. The whole string
-    must match regular expression, that is, we use 'match' rather than 'search'
+    Variable (--var_name), component name (--comp_name) and device name (--dev_name) match supports regular expressions. 
+    The whole string must match regular expression, that is, we use 'match' rather than 'search'
 
 Commands:
 
@@ -130,7 +131,7 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(argv,
                                    's:p:n:h',
                                    ['help', 'base-url=', 'token=', 'network=', 'id=', 'expiration=',
-                                    'key=', 'var_name=', 'dev_id=', 'dev_name=', 'index=',
+                                    'key=', 'var_name=', 'dev_id=', 'dev_name=', 'comp_name=', 'index=',
                                     'tags=', 'reason=', 'start='])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
@@ -147,6 +148,7 @@ if __name__ == '__main__':
     var_name = ''
     dev_id = 0
     dev_name = ''
+    comp_name = ''
     index = 0
     tags = ''
     start_time = 0
@@ -179,6 +181,8 @@ if __name__ == '__main__':
             dev_id = arg
         elif opt in ['--dev_name']:
             dev_name = arg
+        elif opt in ['--comp_name']:
+            comp_name = arg
         elif opt in ['--index']:
             index = arg
         elif opt in ['--tags']:
@@ -205,6 +209,6 @@ if __name__ == '__main__':
     script = nsgcli.silence_main.NetSpyGlassAlertSilenceControl(base_url=base_url, token=token, netid=netid,
                                                                 silence_id=silence_id, expiration=expiration,
                                                                 user=user, reason=reason, key=key, var_name=var_name,
-                                                                dev_id=dev_id, dev_name=dev_name,
+                                                                dev_id=dev_id, dev_name=dev_name, comp_name=comp_name,
                                                                 index=index, tags=tags, start_time=start_time)
     script.run(command)
