@@ -36,12 +36,12 @@ Usage:
                        specified, the start time can be both in the future and in the past.
        --expiration:   silence expiration time, minutes. The silence stops at the time calculated as
                        the start time plus expiration time. 
-       --key:          alert key to match
+       --key:          alert key to match. Single value, list or regular expression is not supported.
        --var_name:     variable name. Accepts regular expression.
-       --dev_id:       device Id to match
+       --dev_id:       device Id to match. Single value, list or regular expression is not supported.
        --dev_name:     device name. Accepts regular expression.
        --comp_name:    component name. Accepts regular expression.
-       --index:        component index to match
+       --index:        component index to match. Single value, list or regular expression is not supported.
        --tags:         a string that represents comma-separated list of tags to match. Tag can be defined either
                        as 'Facet.word' or just 'Facet'. The latter is equivalent to matching 'Facet.*'. Tag
                        can be prepended with '!' to indicate negation - alert matches if it does not have corresponding
