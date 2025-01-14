@@ -35,6 +35,7 @@ class Silence:
         self.var_name = match.get('varName', '')
         self.device_id = match.get('deviceId', 0)
         self.device_name = match.get('deviceName', '')
+        self.component_name = match.get('componentName', '')
         self.index = match.get('index', 0)
         self.user = dd.get('user', '')
         self.reason = dd.get('reason', '')
@@ -55,6 +56,7 @@ class Silence:
                 'varName': self.var_name,
                 'deviceId': self.device_id,
                 'deviceName': self.device_name,
+                'componentName': self.component_name,
                 'index': self.index,
             }
         }
@@ -78,6 +80,8 @@ class Silence:
             self.device_id = other.device_id
         if other.device_name != '':
             self.device_name = other.device_name
+        if other.component_name != '':
+            self.component_name = other.component_name
         if other.index != 0:
             self.index = other.index
         if other.tags:
@@ -90,7 +94,7 @@ class Silence:
 
 class NetSpyGlassAlertSilenceControl:
     def __init__(self, base_url='', token='', netid=1, silence_id=0, expiration=0, user='', reason='',
-                 key='', var_name='', dev_id=0, dev_name='', index=0, tags='', start_time=0):
+                 key='', var_name='', dev_id=0, dev_name='', comp_name='', index=0, tags='', start_time=0):
         self.base_url = base_url
         self.token = token
         self.netid = netid
@@ -102,6 +106,7 @@ class NetSpyGlassAlertSilenceControl:
         self.var_name = var_name
         self.dev_id = dev_id
         self.dev_name = dev_name
+        self.comp_name = comp_name
         self.index = index
         self.tags = tags
         self.start_time = start_time
@@ -122,6 +127,7 @@ class NetSpyGlassAlertSilenceControl:
         silence.var_name = self.var_name
         silence.device_id = self.dev_id
         silence.device_name = self.dev_name
+        silence.component_name = self.comp_name
         silence.index = self.index
         silence.user = self.user
         silence.reason = self.reason
