@@ -1,7 +1,9 @@
+import os
 import setuptools
 from nsgcli.version import __version__
 
-with open('README.md', 'r') as fh:
+readme_file = 'README_PYPI.md' if os.path.exists('README_PYPI.md') else 'README.md'
+with open(readme_file, 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(name='nsgcli',
