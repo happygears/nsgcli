@@ -32,3 +32,11 @@ class CommandTestCase(unittest.TestCase):
         cmdline = 'show system status'
         actual = testutils.run_cmd_with_mock(cmdline, 'get', 401, not_authorized_resp, content_type='text/plain')
         self.assertEqual(actual, 'An error occurred. Error: not authorized or invalid, API status code: 401')
+
+    def test_urllib3_warning_suppressed(self):
+        import warnings
+        matching_filters = [
+            f for f in warnings.filters
+            if f[0] == 'ignore' and hasattr(f[3], 'pattern') and 'urllib3' in f[3].pattern
+        ]
+        self.assertTrue(len(matching_filters) > 0)

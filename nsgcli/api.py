@@ -7,6 +7,9 @@ This module implements the NetSpyGlass API
 """
 
 import copy
+import warnings
+
+warnings.filterwarnings('ignore', category=Warning, module='.*urllib3.*')
 
 import urllib3
 from requests_unixsocket import Session

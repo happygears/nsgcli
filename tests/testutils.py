@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from unittest import mock
 
+import nsgcli
 from requests import Session
 
 from nsgcli.nsgcli_main import NsgCLI
