@@ -31,8 +31,10 @@ class JsonArrayResponseHandler:
         the server sends objects as JSON array. Inside of the array, each item
         occupies one line. Skip array start and end ( [ and ] ) and deserialize each
         line separately
+
+        This is a generator so that callers can process each item as soon as it arrives
+        instead of accumulating the whole response in memory (e.g. snmpwalk of the entire tree)
         """
-        response_list = []
         for line in response.iter_lines(decode_unicode=True):
             if not line or line.strip() in ['[', ']']:
                 continue
@@ -40,8 +42,7 @@ class JsonArrayResponseHandler:
                 line = line[1:]
 
             try:
-                response_list.append(json.loads(line))
+                yield json.loads(line)
             except Exception as error:
                 print(
                     'Unable to decode response data to json. Input data: {}, Error: {}'.format(line, error))
-        return response_list
