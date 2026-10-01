@@ -15,7 +15,7 @@ NetSpyGlass server running on the same machine.
 
 Usage:
 
-    nsgcli.py --base-url=url [--token=token] [--network=netid] [--region=region] [-U|--utc] [-L|--local] [command]
+    nsgcli.py --base-url=url [-a|-t|--token=token] [--network=netid] [--region=region] [-U|--utc] [-L|--local] [command]
     
     --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
                  --base-url must be provided.
@@ -42,7 +42,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(sys.argv[1:],
-                                   'hs:b:t:n:r:LUv',
+                                   'hs:b:a:t:n:r:LUv',
                                    ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region=', 'version'])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
@@ -61,7 +61,7 @@ if __name__ == '__main__':
             sys.exit(3)
         elif opt in ('-b', '--base-url'):
             base_url = arg.rstrip('/ ')
-        elif opt in ('-a', '--token'):
+        elif opt in ('-a', '-t', '--token'):
             token = arg
         elif opt in ('-n', '--network'):
             netid = arg

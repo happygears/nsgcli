@@ -18,7 +18,7 @@ This script can add, update and list alert silences
 
 Usage:
 
-    silence <command> --base-url=url [--token=token] (-n|--network)=netid [-h|--help] (--id=NN) \\
+    silence <command> (-b|--base-url)=url [-a|-t|--token=token] (-n|--network)=netid [-h|--help] (--id=NN) \\
                         --start=TIME --expiration=time (--var_name=name) (--dev_id=id) (--dev_name=name) \\
                         (--index=idx) (--tags=tags_string) (-reason=reason_text)
 
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     try:
         opts, args = getopt.getopt(argv,
-                                   's:p:n:h',
+                                   's:p:b:a:t:n:h',
                                    ['help', 'base-url=', 'token=', 'network=', 'id=', 'expiration=',
                                     'key=', 'var_name=', 'dev_id=', 'dev_name=', 'comp_name=', 'index=',
                                     'tags=', 'reason=', 'start='])
@@ -162,7 +162,7 @@ if __name__ == '__main__':
             sys.exit(3)
         elif opt in ('-b', '--base-url'):
             base_url = arg.rstrip('/ ')
-        elif opt in ('-a', '--token'):
+        elif opt in ('-a', '-t', '--token'):
             token = arg
         elif opt in ['-n', '--network']:
             netid = int(arg)
