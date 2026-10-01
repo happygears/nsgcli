@@ -24,6 +24,8 @@ PYTHONPATH=.:tests python3 -m unittest test_show.ShowTestCase.test_show_uuid
 
 There is no linter configured.
 
+`bin/*` scripts are installed via `setup.py scripts=`, which copies them at install time. An editable install (`uv tool install --editable`) picks up changes to `nsgcli/*.py` immediately, but changes to `bin/*` only take effect after `uv tool install --editable --reinstall /path/to/nsgcli`.
+
 ## Releases
 
 CI (`.github/workflows/build.yml`) builds on every push. It publishes to PyPI only when a `v*` tag is pushed (e.g. `git tag v2.2.10 && git push origin v2.2.10`). CI overwrites `nsgcli/version.py` with the version taken from the tag, so don't bump that file by hand. `README_PYPI.md` is the PyPI long description (end-user docs). `README.md` is the GitHub developer doc and has curl examples for the backend REST endpoints the CLI wraps.
