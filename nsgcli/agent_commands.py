@@ -151,8 +151,9 @@ class HashableAgentCommandResponse(set):
 class AgentCommands(sub_command.SubCommand, object):
     # prompt = "exec # "
 
-    def __init__(self, agent_name, base_url, token, net_id, region=None):
-        super(AgentCommands, self).__init__(base_url, token, net_id, region=region)
+    def __init__(self, agent_name, base_url, token, net_id, region=None,
+                 agent_prefix=sub_command.AGENT_PREFIX_AUTO):
+        super(AgentCommands, self).__init__(base_url, token, net_id, region=region, agent_prefix=agent_prefix)
         self.agent_name = agent_name
         self.current_region = region
         if region is None:
@@ -168,6 +169,9 @@ class AgentCommands(sub_command.SubCommand, object):
 
     def help(self):
         print(HELP)
+
+    def multi_agent(self):
+        return self.agent_name.lower() == 'all'
 
     def do_log(self, arg):
         """

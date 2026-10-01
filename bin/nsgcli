@@ -7,6 +7,7 @@ import sys
 
 import nsgcli.nsgcli_main
 import nsgcli.response_formatter
+import nsgcli.sub_command
 from nsgcli.version import __version__
 
 usage_msg = """
@@ -15,7 +16,8 @@ NetSpyGlass server running on the same machine.
 
 Usage:
 
-    nsgcli.py --base-url=url [-a|-t|--token=token] [--network=netid] [--region=region] [-U|--utc] [-L|--local] [command]
+    nsgcli.py --base-url=url [-a|-t|--token=token] [--network=netid] [--region=region] [-U|--utc] [-L|--local]
+               [--agent-prefix=auto|always|never] [command]
     
     --base-url:  server access URL without the path, for example 'http://nsg.domain.com:9100'
                  --base-url must be provided.
@@ -24,6 +26,9 @@ Usage:
                  the interactive mode.
     --utc:       print values in the column `time` in ISO 8601 format in UTC
     --local:     print values in the column `time` in ISO 8601 format in local timezone (default)
+    --agent-prefix:  prefix each line of agent command output with the name of the agent that replied.
+                 'auto' (default) does this only when the reply may come from more than one agent
+                 (commands 'exec ...', 'agent all ...', 'agent find ...'), 'always' and 'never' override.
     -v, --version:   print version and exit
 
     all arguments provided on the command line after the last switch are interpreted together as nsgcli command
@@ -43,7 +48,8 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:],
                                    'hs:b:a:t:n:r:LUv',
-                                   ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region=', 'version'])
+                                   ['help', 'local', 'utc', 'base-url=', 'token=', 'network=', 'region=', 'version',
+                                    'agent-prefix='])
     except getopt.GetoptError as ex:
         print('UNKNOWN: Invalid Argument:' + str(ex))
         raise InvalidArgsException
@@ -54,6 +60,7 @@ if __name__ == '__main__':
     region = None
     command = ''
     time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
+    agent_prefix = nsgcli.sub_command.AGENT_PREFIX_AUTO
 
     for opt, arg in opts:
         if opt in ['-h', '--help']:
@@ -73,6 +80,11 @@ if __name__ == '__main__':
         elif opt in ['-L', '--local']:
             # prints time in ISO format in local time zone
             time_format = nsgcli.response_formatter.TIME_FORMAT_ISO_LOCAL
+        elif opt == '--agent-prefix':
+            if arg not in nsgcli.sub_command.AGENT_PREFIX_MODES:
+                print('--agent-prefix must be one of: ' + ', '.join(nsgcli.sub_command.AGENT_PREFIX_MODES))
+                sys.exit(3)
+            agent_prefix = arg
         elif opt in ['-v', '--version']:
             print(__version__)
             sys.exit(0)
@@ -88,7 +100,7 @@ if __name__ == '__main__':
         token = ''
 
     script = nsgcli.nsgcli_main.NsgCLI(base_url=base_url, token=token, netid=netid, region=region,
-                                       time_format=time_format)
+                                       time_format=time_format, agent_prefix=agent_prefix)
     script.make_prompt()
 
     if command:

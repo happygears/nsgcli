@@ -37,8 +37,9 @@ NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schem
 
 
 class NsgCLI(sub_command.SubCommand, object):
-    def __init__(self, base_url=None, token=None, netid=1, region=None, time_format=TIME_FORMAT_MS):
-        super(NsgCLI, self).__init__(base_url='', token='', net_id=1)
+    def __init__(self, base_url=None, token=None, netid=1, region=None, time_format=TIME_FORMAT_MS,
+                 agent_prefix=sub_command.AGENT_PREFIX_AUTO):
+        super(NsgCLI, self).__init__(base_url='', token='', net_id=1, agent_prefix=agent_prefix)
         self.base_url = base_url
         self.token = token
         self.time_format = time_format
@@ -312,11 +313,11 @@ class NsgCLI(sub_command.SubCommand, object):
         work_args = ' '.join(args)
         if not work_args:
             sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
-                                                   region=self.current_region)
+                                                   region=self.current_region, agent_prefix=self.agent_prefix)
             sub_cmd.cmdloop()
         else:
             sub_cmd = agent_commands.AgentCommands(agent_name, self.base_url, self.token, self.netid,
-                                                   region=self.current_region)
+                                                   region=self.current_region, agent_prefix=self.agent_prefix)
             sub_cmd.onecmd(work_args)
 
     def help_agent(self):
@@ -334,7 +335,8 @@ class NsgCLI(sub_command.SubCommand, object):
 
         @param arg:   words after 'exec' as one string
         """
-        sub_cmd = exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region)
+        sub_cmd = exec_commands.ExecCommands(self.base_url, self.token, self.netid, region=self.current_region,
+                                             agent_prefix=self.agent_prefix)
         if not arg:
             sub_cmd.cmdloop()
         else:

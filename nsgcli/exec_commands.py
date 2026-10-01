@@ -24,8 +24,8 @@ EXEC_TEMPLATE_WITHOUT_REGION = 'apiv3/net/{0}/exec/{1}?address={2}&args={3}'
 class ExecCommands(sub_command.SubCommand, object):
     # prompt = "exec # "
 
-    def __init__(self, base_url, token, net_id, region=None):
-        super(ExecCommands, self).__init__(base_url, token, net_id, region=region)
+    def __init__(self, base_url, token, net_id, region=None, agent_prefix=sub_command.AGENT_PREFIX_AUTO):
+        super(ExecCommands, self).__init__(base_url, token, net_id, region=region, agent_prefix=agent_prefix)
         self.current_region = region
         if region is None:
             self.prompt = 'exec # '
@@ -37,6 +37,10 @@ class ExecCommands(sub_command.SubCommand, object):
         # this method is not called when user enters "show system" context and hits Tab then
         # print('ShowCommands.completedefault text=' + text + ', _line=' + _line)
         return self.get_args(text)
+
+    def multi_agent(self):
+        # exec commands run on any agent in the region
+        return True
 
     def help(self):
         print('Call agents to execute various commands. Arguments: {0}'.format(self.get_args()))

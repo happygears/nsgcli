@@ -12,6 +12,12 @@ from . import api
 
 SKIP_NAMES_FOR_COMPLETION = ['EOF', 'q']
 
+# controls the "<agent> | " prefix in front of each line of agent command output
+AGENT_PREFIX_AUTO = 'auto'      # only when the reply may come from more than one agent
+AGENT_PREFIX_ALWAYS = 'always'
+AGENT_PREFIX_NEVER = 'never'
+AGENT_PREFIX_MODES = [AGENT_PREFIX_AUTO, AGENT_PREFIX_ALWAYS, AGENT_PREFIX_NEVER]
+
 EXEC_TEMPLATE_WITH_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&region={3}&args={4}'
 EXEC_TEMPLATE_WITHOUT_REGION = 'v2/nsg/cluster/net/{0}/exec/{1}?address={2}&args={3}'
 
@@ -48,12 +54,13 @@ def sizeof_fmt(num, suffix='B'):
 class SubCommand(cmd.Cmd, object):
     # prompt = "(sub_command) "
 
-    def __init__(self, base_url, token, net_id, region=None):
+    def __init__(self, base_url, token, net_id, region=None, agent_prefix=AGENT_PREFIX_AUTO):
         super(SubCommand, self).__init__()
         self.base_url = base_url
         self.token = token
         self.netid = net_id
         self.current_region = region
+        self.agent_prefix = agent_prefix
         if region is None:
             self.prompt = 'sub # '
         else:
@@ -156,13 +163,27 @@ class SubCommand(cmd.Cmd, object):
                 for status, acr in replies:
                     self.print_agent_response(acr, status)
 
+    def multi_agent(self):
+        """
+        return True if replies to commands of this group may come from more than one agent
+        """
+        return False
+
+    def show_agent_prefix(self):
+        if self.agent_prefix == AGENT_PREFIX_ALWAYS:
+            return True
+        if self.agent_prefix == AGENT_PREFIX_NEVER:
+            return False
+        return self.multi_agent()
+
     def print_agent_response(self, acr, status):
+        prefix = '{0} | '.format(acr['agent']) if self.show_agent_prefix() else ''
         try:
             if not status or status == 'ok':
                 for line in acr['response']:
-                    print('{0} | {1}'.format(acr['agent'], line))
+                    print('{0}{1}'.format(prefix, line))
             else:
-                print('{0} | {1}'.format(acr['agent'], status))
+                print('{0}{1}'.format(prefix, status))
         except Exception as e:
             print(e)
             print(acr)
