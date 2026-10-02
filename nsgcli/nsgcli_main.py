@@ -7,12 +7,14 @@ This module implements subset of NetSpyGlass CLI commands
 """
 
 import json
+import shlex
 
 from . import agent_commands
 from . import api
 from . import device_commands
 from . import discovery_commands
 from . import exec_commands
+from . import maintenance_commands
 from . import search
 from . import show
 from . import sub_command
@@ -34,6 +36,8 @@ DISCOVERY_ARGS = ['start', 'pause', 'resume', 'submit', 'status']
 HUD_ARGS = ['reset']
 DEVICE_ARGS = ['download']
 NSGQL_ARGS = ['rebuild']  # command "nsgql rebuild" rebuilds NsgQL dynamic schema
+# values of the debug argument that mean "no argument"
+DEBUG_ARG_PLACEHOLDERS = ['all', 'none', '-']
 
 
 class NsgCLI(sub_command.SubCommand, object):
@@ -46,6 +50,9 @@ class NsgCLI(sub_command.SubCommand, object):
         self.current_region = region
         self.netid = netid
         self.prompt = ' > '
+        # exit status of the last one-shot command, used by bin/nsgcli; only commands that track
+        # it (currently "maintenance") change it
+        self.exit_status = 0
         # self.prompt = lambda _: self.make_prompt()
 
     def make_prompt(self):
@@ -194,17 +201,46 @@ class NsgCLI(sub_command.SubCommand, object):
         return self.complete_cmd(text, DEVICE_ARGS)
 
     ##########################################################################################
+    def make_maintenance_commands(self):
+        return maintenance_commands.MaintenanceCommands(self.base_url, self.token, self.netid,
+                                                        region=self.current_region)
+
+    def do_maintenance(self, arg):
+        """
+        Cluster-wide maintenance operations (require the admin role). See "help maintenance".
+        """
+        sub_cmd = self.make_maintenance_commands()
+        if not arg:
+            sub_cmd.cmdloop()
+        else:
+            sub_cmd.onecmd(arg)
+            self.exit_status = sub_cmd.exit_status
+
+    def help_maintenance(self):
+        self.make_maintenance_commands().help()
+
+    def complete_maintenance(self, text, _line, _begidx, _endidx):
+        return self.complete_cmd(text, list(maintenance_commands.MAINTENANCE_COMMANDS.keys()))
+
+    do_maint = do_maintenance
+    help_maint = help_maintenance
+    complete_maint = complete_maintenance
+
+    ##########################################################################################
     def do_debug(self, arg):
         """
         Set debug level and optional argument with optional timeout:
 
         debug level
         OR
+        debug level time_min
+        OR
         debug level arg time_min
 
         If only one argument is given, it is assumed to be the debug level and it will be set for 10 min.
+        If two arguments are given, they are interpreted as debug level and the time in minutes.
         If three arguments are given, they are interpreted as debug level, debug argument and the time in
-        minutes.
+        minutes. Use "-" (or "all", "none") as the argument to pass an empty one.
 
         Debug level and argument are passed to all servers in the cluster via inter-process message bus.
         Timeout is in minutes. Debug level reverts to its current value and argument
@@ -249,22 +285,27 @@ class NsgCLI(sub_command.SubCommand, object):
         if not arg:
             print('Invalid argument "{0}"; see "help debug"'.format(arg))
             return
-        # arg can be either just a number or two numbers separated by a space
+        # "level", "level time_min" or "level arg time_min"
         try:
-            comps = arg.split()
+            comps = shlex.split(arg)
             level = int(comps[0])
             if len(comps) == 1:
                 # only level has been specified
                 arg = ''
                 time = 10
+            elif len(comps) == 2:
+                arg = ''
+                time = int(comps[1])
             elif len(comps) == 3:
                 arg = comps[1]
                 time = int(comps[2])
             else:
-                print('Invalid number of arguments; expected 1 or 3 arguments, but got {0}'.format(arg))
+                print('Invalid number of arguments; expected 1, 2 or 3 arguments, but got {0}'.format(arg))
                 return
-            request = 'v2/nsg/test/net/{0}/debug?level={1}&time={2}&arg={3}'.format(self.netid, level, time, arg)
-            response = self.basic_command(request)
+            if arg.lower() in DEBUG_ARG_PLACEHOLDERS:
+                arg = ''
+            request = 'v2/nsg/test/net/{0}/debug'.format(self.netid)
+            response = self.basic_command(request, data={'level': level, 'time': time, 'arg': arg})
             if response is not None:
                 self.print_response(response)
         except Exception as e:
