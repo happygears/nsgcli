@@ -14,7 +14,7 @@ This repository contains the Python client library and CLI suite for the [NetSpy
 
 ### Using `uv` (Recommended)
 
-Install the repository in editable mode so changes in `~/src/nsgcli` take effect immediately:
+Install the repository in editable mode so changes in `~/src/nsg/nsgcli` take effect immediately:
 
 ```bash
 uv tool install --editable /path/to/nsgcli
